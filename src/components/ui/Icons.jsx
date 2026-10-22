@@ -1,0 +1,4 @@
+import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronDown, CircleHelp, Construction, Map, MapPin, Menu, Route, Sparkles, Users, Waves, X, Camera, Utensils, ShieldCheck, ChartNoAxesCombined, Recycle, Clock3 } from 'lucide-react'
+
+const icons = { activity: Activity, arrowDownRight: ArrowDownRight, arrowRight: ArrowRight, arrowUpRight: ArrowUpRight, check: Check, chevronDown: ChevronDown, help: CircleHelp, construction: Construction, map: Map, mapPin: MapPin, menu: Menu, route: Route, sparkles: Sparkles, users: Users, waves: Waves, close: X, camera: Camera, utensils: Utensils, shield: ShieldCheck, chart: ChartNoAxesCombined, recycle: Recycle, clock: Clock3 }
+export function Icon({ name, size = 20, ...props }) { const Component = icons[name] || CircleHelp; return <Component size={size} aria-hidden="true" {...props} /> }
