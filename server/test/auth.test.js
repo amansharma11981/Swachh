@@ -50,9 +50,22 @@ test('registration creates a citizen, hashes the password, and returns a safe se
 test('registration validates inputs and refuses attempted role escalation', async () => {
   const { app, model } = freshApp()
   await origin(request(app).post('/api/v1/auth/register').send(registerPayload({ email: 'bad' }))).expect(400)
-  await origin(request(app).post('/api/v1/auth/register').send(registerPayload({ password: 'short', confirmPassword: 'short' }))).expect(400)
+  await origin(request(app).post('/api/v1/auth/register').send(registerPayload({ password: 'Abcd123', confirmPassword: 'Abcd123' }))).expect(400)
   await origin(request(app).post('/api/v1/auth/register').send(registerPayload({ role: 'admin' }))).expect(400)
   assert.equal(model.records.size, 0)
+})
+
+test('an eight-character password can register and then log in', async () => {
+  const { app } = freshApp()
+  const agent = request.agent(app)
+  const payload = registerPayload({ password: 'Abcd123!', confirmPassword: 'Abcd123!' })
+  await origin(agent.post('/api/v1/auth/register').send(payload)).expect(201)
+  await origin(agent.post('/api/v1/auth/logout').send({})).expect(200)
+  const login = await origin(agent.post('/api/v1/auth/login').send({ email: payload.email, password: payload.password })).expect(200)
+  assert.equal(login.body.data.user.email, 'aman@example.test')
+  assert.match(login.headers['set-cookie'][0], /HttpOnly/i)
+  const session = await agent.get('/api/v1/auth/me').expect(200)
+  assert.equal(session.body.data.user.email, 'aman@example.test')
 })
 
 test('duplicate email is safe and case-insensitive', async () => {

@@ -11,7 +11,7 @@
 
 ## Password policy
 
-Passwords must be 12–128 characters. bcrypt cost is 12. Password confirmation is checked by the client and, when supplied, by server validation. No password hash is returned.
+Passwords must be 8–128 characters. bcrypt cost is 12. Password confirmation is checked by the client and, when supplied, by server validation. No password hash is returned.
 
 ## Cookie and CSRF policy
 

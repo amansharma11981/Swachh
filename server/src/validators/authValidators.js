@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const passwordSchema = z.string().min(12, 'Password must be at least 12 characters').max(128, 'Password must be 128 characters or fewer')
+const passwordSchema = z.string().min(8, 'Password must be at least 8 characters').max(128, 'Password must be 128 characters or fewer')
 const emailSchema = z.string().trim().email('Enter a valid email address').max(254).transform((value) => value.toLowerCase())
 
 export const registerSchema = z.object({

@@ -1,4 +1,9 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
+export function normalizeApiBaseUrl(configuredBase = '') {
+  const base = String(configuredBase || '/api/v1').trim().replace(/\/+$/, '') || '/api/v1'
+  return /^https?:\/\/[^/]+$/i.test(base) ? `${base}/api/v1` : base
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL)
 
 export class ApiError extends Error {
   constructor(message, { status = 0, code = 'NETWORK_ERROR', details } = {}) {

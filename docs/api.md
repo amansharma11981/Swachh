@@ -14,7 +14,7 @@ Public. Returns `status` (`ok` or `degraded`), `database` (`connected` or `disco
 
 ### `POST /auth/register`
 
-Public and rate limited. Body: `{ "name": "Aman Singh", "email": "aman@example.test", "password": "long-password", "confirmPassword": "long-password" }`. Password is 12–128 characters. The endpoint always creates a citizen, rejects unknown fields (including `role`), returns a safe user object, and sets the session cookie.
+Public and rate limited. Body: `{ "name": "Aman Singh", "email": "aman@example.test", "password": "long-password", "confirmPassword": "long-password" }`. Password is 8–128 characters. The endpoint always creates a citizen, rejects unknown fields (including `role`), returns a safe user object, and sets the session cookie.
 
 ### `POST /auth/login`
 

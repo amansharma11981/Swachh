@@ -49,6 +49,21 @@ describe('browser authentication', () => {
     expect(api('/auth/register', 'POST')).toBeUndefined()
   })
 
+  it('creates an account with an eight-character password and enters the citizen workspace', async () => {
+    fetch.mockImplementation(async (url) => url.includes('/auth/me')
+      ? response(401, { error: { message: 'Not signed in' } })
+      : response(201, { data: { user: { id: 'c1', name: 'Aman Singh', role: 'citizen' } } }))
+    mount('/register')
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Full name'), 'Aman Singh')
+    await user.type(screen.getByLabelText('Email address'), 'aman@example.test')
+    await user.type(screen.getByLabelText('Password'), 'Abcd123!')
+    await user.type(screen.getByLabelText('Confirm password'), 'Abcd123!')
+    await user.click(screen.getByRole('button', { name: /create citizen account/i }))
+    expect(await screen.findByText(/Citizen dashboard/)).toBeInTheDocument()
+    expect(api('/auth/register', 'POST')?.[1].body).toContain('Abcd123!')
+  })
+
   it('shows a failed login and keeps the user on the form', async () => {
     fetch.mockImplementation(async (url, options) => url.includes('/auth/me')
       ? response(401, { error: { message: 'Not signed in' } })

@@ -68,7 +68,7 @@ The backend can also be run from its directory with `npm run dev`, `npm start`, 
 
 ## Initial administrator
 
-Public registration always creates a citizen and rejects unexpected privilege fields. There is no public admin registration. For the first administrator only, set `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL`, and a unique 12â€“128 character `INITIAL_ADMIN_PASSWORD` in `server/.env`, then run:
+Public registration always creates a citizen and rejects unexpected privilege fields. Passwords must be 8–128 characters. There is no public admin registration. For the first administrator only, set `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL`, and a unique 8–128 character `INITIAL_ADMIN_PASSWORD` in `server/.env`, then run:
 
 ```bash
 npm run seed:admin

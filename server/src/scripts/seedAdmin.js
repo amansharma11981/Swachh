@@ -9,8 +9,8 @@ async function seedAdmin() {
   const name = process.env.INITIAL_ADMIN_NAME?.trim()
   const email = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase()
   const password = process.env.INITIAL_ADMIN_PASSWORD
-  if (!name || !email || !password || password.length < 12 || password.length > 128) {
-    throw new Error('Set INITIAL_ADMIN_NAME, INITIAL_ADMIN_EMAIL, and a 12–128 character INITIAL_ADMIN_PASSWORD in server/.env.')
+  if (!name || !email || !password || password.length < 8 || password.length > 128) {
+    throw new Error('Set INITIAL_ADMIN_NAME, INITIAL_ADMIN_EMAIL, and an 8–128 character INITIAL_ADMIN_PASSWORD in server/.env.')
   }
   await connectDb(config.mongoUri)
   try {
