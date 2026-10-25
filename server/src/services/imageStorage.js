@@ -13,10 +13,10 @@ export function createImageStorage(config, cloudinaryClient = cloudinary) {
   cloudinaryClient.config({ cloud_name: config.cloudinary.cloudName, api_key: config.cloudinary.apiKey, api_secret: config.cloudinary.apiSecret, secure: true })
   return {
     enabled: true,
-    upload(buffer, { contentType }) {
+    upload(buffer, { contentType, folder = 'swachhai/reports' }) {
       return new Promise((resolve, reject) => {
         const stream = cloudinaryClient.uploader.upload_stream({
-          folder: 'swachhai/reports', resource_type: 'image', allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+          folder, resource_type: 'image', allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
           transformation: [{ width: 2400, height: 2400, crop: 'limit' }, { quality: 'auto', fetch_format: 'auto' }],
         }, (error, result) => {
           if (error || !result) return reject(new AppError(502, 'IMAGE_STORAGE_FAILED', 'The image could not be stored. Please try again.'))

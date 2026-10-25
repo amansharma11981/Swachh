@@ -85,3 +85,32 @@ Owner only, and only while status is `submitted`. Body accepts one or more of `d
 ### `GET /reports?page=1&limit=10&status=under_review`
 
 Administrator only, paginated all-report listing. Citizen history is never used to access other users' reports.
+
+## Worker tasks and administrator dispatch (Phase 5)
+
+All task routes require the existing HttpOnly session. Worker routes are restricted to active `worker` accounts and always filter by the authenticated worker ID. Administrator routes require `admin`. Task list endpoints accept `page` (positive integer) and `limit` (1–50).
+
+### Worker endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/tasks/worker/dashboard` | Own task counts and recent assignments |
+| GET | `/tasks/worker/tasks?page=1&limit=8&status=active&q=SW-000` | Own paginated tasks; filters include `active`, `assigned`, `in_progress`, `submitted_for_verification`, and `completed`; `q` is a report-number prefix |
+| GET | `/tasks/worker/tasks/:id` | Task details only when assigned to the caller; inaccessible IDs return 404 |
+| POST | `/tasks/worker/tasks/:id/accept` | Accept an assigned task and start work; safe to repeat after acceptance |
+| POST | `/tasks/worker/tasks/:id/notes` | Add `{ "body": "..." }`, up to 500 characters, while task is active |
+| POST | `/tasks/worker/tasks/:id/evidence` | Multipart field `image`; JPEG, PNG, or WebP, same configured size cap, maximum three per assignment/rework cycle and fifteen per task |
+| POST | `/tasks/worker/tasks/:id/submit` | Submit in-progress work for administrator verification; at least one completion photo is required |
+
+### Administrator endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/tasks/admin/queue?page=1&limit=10&q=SW-000` | Paginated dispatch and verification queue; optional report-number prefix search |
+| GET | `/tasks/admin/workers?page=1&limit=50` | Active workers with counts of assigned, in-progress, or awaiting-verification tasks |
+| POST | `/tasks/admin/:id/assign` | Assign or reassign: `{ "workerId": "...", "priority": "normal", "dueAt": null, "reason": "..." }`; reassignment reason is required |
+| GET | `/tasks/admin/:id/history` | Assignment, note, evidence, status, and verification audit events |
+| POST | `/tasks/admin/:id/approve` | Approve submitted work; optional `{ "reason": "..." }` review note |
+| POST | `/tasks/admin/:id/return` | Return submitted work to the assigned worker with a reason of at least eight characters |
+
+Workers are provisioned by an administrator promoting an existing account using the existing `PATCH /users/:id/role` endpoint. Public registration cannot create worker or admin roles.

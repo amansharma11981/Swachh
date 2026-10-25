@@ -16,7 +16,7 @@ export function createReportUpload({ maxFileSizeBytes }) {
       next(error)
     }),
     async (request, _response, next) => {
-      if (!request.file) return next(badRequest('Choose an image to attach to this report.', [{ field: 'image', message: 'An image is required.' }]))
+      if (!request.file) return next(badRequest('Choose a supported image to upload.', [{ field: 'image', message: 'An image is required.' }]))
       try {
         const detected = await fileTypeFromBuffer(request.file.buffer)
         if (!detected || !acceptedTypes.has(detected.mime) || request.file.mimetype !== detected.mime) {

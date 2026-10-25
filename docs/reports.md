@@ -2,9 +2,9 @@
 
 ## Data and ownership
 
-`Report` stores a collision-safe sequential report number, the authenticated reporter reference, category, description, location, optional configured-zone snapshot, image references, current status, normal priority, server-generated status history, and timestamps. A reporter ID, status, priority, assignment, or history supplied by a client is rejected. The reporter is taken from the verified HttpOnly session.
+`Report` stores a collision-safe sequential report number, the authenticated reporter reference, category, description, location, optional configured-zone snapshot, image references, current status, priority, assignment metadata, server-generated status and assignment history, and timestamps. A reporter ID, status, priority, assignment, or history supplied by a citizen is rejected. The reporter is taken from the verified HttpOnly session.
 
-Citizens can access only their own reports. Requests for another citizen's valid report return 404 so the API does not disclose its existence. Administrators can read report details and use the paginated all-report endpoint. Worker report access and report management are not enabled in this phase. A citizen may update description/category/zone only while status is `submitted`.
+Citizens can access only their own reports. Requests for another citizen's valid report return 404 so the API does not disclose its existence. Administrators can read report details and use the paginated all-report endpoint. Workers can access task details only for reports assigned to their authenticated worker account. A citizen may update description/category/zone only while status is `submitted`.
 
 ## Status policy
 
@@ -15,17 +15,18 @@ Every newly created report starts as `submitted`, priority `normal`, with a serv
 | submitted | under_review, rejected, duplicate |
 | under_review | assigned, rejected, duplicate |
 | assigned | in_progress, under_review |
-| in_progress | resolved, under_review |
+| in_progress | submitted_for_verification, resolved, under_review |
+| submitted_for_verification | resolved, in_progress, reopened |
 | resolved | reopened |
 | rejected | reopened |
 | duplicate | none |
 | reopened | under_review, assigned |
 
-There is no status-transition HTTP endpoint or admin review UI yet. The transition service is ready for the future review workflow. No unrecorded status event is shown in the citizen timeline.
+Worker and administrator status changes use the task service and append actor/timestamp events to status and assignment history. The citizen timeline includes the newly supported verification status. Admin review and worker completion UI are part of Phase 5.
 
 ## Images
 
-The API accepts one authenticated multipart field named `image`, only JPEG, PNG, or WebP, default maximum 5 MiB. Multer keeps the bounded upload in memory; the server checks the file signature with `file-type` and requires it to match the declared MIME type. Cloudinary stores originals with a size/quality transformation and returns a secure URL/reference. If the MongoDB report write fails after storage succeeds, the API attempts to delete the orphaned Cloudinary asset.
+The API accepts one authenticated multipart field named `image`, only JPEG, PNG, or WebP, default maximum 5 MiB. Multer keeps the bounded upload in memory; the server checks the file signature with `file-type` and requires it to match the declared MIME type. Cloudinary stores citizen photos and worker completion evidence with a size/quality transformation and returns a secure URL/reference. If the MongoDB report write fails after storage succeeds, the API attempts to delete the orphaned Cloudinary asset.
 
 Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in backend-only `server/.env`. Until all three exist, report creation responds with 503; tests inject a mock storage adapter. The current Cloudinary integration uses standard delivery URLs, which are publicly retrievable if shared. Do not upload faces or sensitive/private material. Review provider privacy and retention requirements before public deployment. The API never logs file contents or storage credentials.
 

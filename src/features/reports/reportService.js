@@ -26,7 +26,7 @@ export const REPORT_CATEGORIES = [
 
 export const REPORT_STATUS_LABELS = {
   submitted: 'Submitted', under_review: 'Under review', assigned: 'Assigned',
-  in_progress: 'In progress', resolved: 'Resolved', rejected: 'Not approved',
+  in_progress: 'In progress', submitted_for_verification: 'Awaiting verification', resolved: 'Resolved', rejected: 'Not approved',
   duplicate: 'Duplicate', reopened: 'Reopened',
 }
 

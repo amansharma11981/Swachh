@@ -157,6 +157,7 @@
 .report-status{display:inline-flex;align-items:center;min-height:27px;padding:3px 9px;border:1px solid #58613e;background:#202518;color:#e0f3a5;font-size:11px;font-weight:600;white-space:nowrap}
 .report-status-under_review,.report-status-assigned{border-color:#635537;background:#211f17;color:#f0d89e}
 .report-status-in_progress,.report-status-reopened{border-color:#38565c;background:#162124;color:#a2dbe0}
+.report-status-submitted_for_verification{border-color:#5750a0;background:#201e32;color:#c9c3ff}
 .report-status-resolved{border-color:#3d6149;background:#18241b;color:#a7e1b5}
 .report-status-rejected,.report-status-duplicate{border-color:#70443e;background:#291b19;color:#f2b6ad}
 .report-card h3{margin:13px 0 6px;font:500 18px/1.25 var(--display);letter-spacing:-.02em}

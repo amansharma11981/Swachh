@@ -1,6 +1,6 @@
 ﻿# SwachhAI
 
-SwachhAI is an academic civic cleanliness reporting platform concept for NIT Patna. It includes a React/Vite client, MongoDB-backed Express API, secure cookie authentication, role checks, and a citizen report workflow with persistent report metadata, validated image uploads, location capture, report history, and status tracking. AI classification, worker assignment, operational maps, notifications, and IoT remain future work.
+SwachhAI is an academic civic cleanliness reporting platform concept for NIT Patna. It includes a React/Vite client, MongoDB-backed Express API, secure cookie authentication, role checks, citizen reporting, and an administrator-to-worker assignment and completion-verification workflow. AI classification, operational maps, real-time notifications, and IoT remain future work.
 
 ## Architecture
 
@@ -62,7 +62,7 @@ npm run test:server
 npm run test:client
 ```
 
-Production hosting setup for Vercel, Render, Atlas, and Cloudinary is documented in [docs/deployment.md](docs/deployment.md). The root `vercel.json`, `render.yaml`, and `.github/workflows/ci.yml` provide SPA routing, backend Blueprint configuration, and verification CI; they do not publish the app without a connected GitHub repository and provider setup.
+Production hosting setup for Vercel, Railway or Render, Atlas, and Cloudinary is documented in [docs/deployment.md](docs/deployment.md). The root `vercel.json`, `render.yaml`, and `.github/workflows/ci.yml` provide SPA routing, optional Render Blueprint configuration, and verification CI; Railway's service root and deployment settings are documented there.
 
 The backend can also be run from its directory with `npm run dev`, `npm start`, and `npm test`.
 
@@ -93,8 +93,8 @@ The command creates exactly the configured admin, refuses to modify an existing 
 | Role | Access |
 | --- | --- |
 | Citizen | Citizen workspace and own profile; no worker or admin APIs |
-| Worker | Worker workspace and own profile; no admin user management |
-| Admin | Operations shell and restricted user listing/role management |
+| Worker | Own assigned tasks, progress notes, completion photos, and task history; no admin assignment or verification controls |
+| Admin | Assignment queue, worker workload, reassignment, assignment history, completion verification, and restricted user/role management |
 
 Role changes and protected access are checked server-side against the current database user, not the client session object. The last active admin cannot be demoted.
 
@@ -122,7 +122,7 @@ All endpoints are under `/api/v1`. See [docs/api.md](docs/api.md) for request/re
 
 Persistent image uploads require CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in server/.env. The API refuses report creation when storage is not configured; it never pretends an upload succeeded. Cloudinary credentials are backend-only. Uploaded images use Cloudinary delivery URLs, so avoid uploading sensitive faces or private information and review provider access settings before a public deployment.
 
-`REPORT_MAX_IMAGE_SIZE_BYTES` defaults to 5 MiB. `REPORT_ZONES` configures provisional labels without verified boundaries or coordinates. Browser GPS is requested only after the user chooses it and is shown as unverified. Reports start at `submitted`; AI classification, admin review UI, worker assignment, and resolution workflows remain future work. See [docs/reports.md](docs/reports.md).
+`REPORT_MAX_IMAGE_SIZE_BYTES` defaults to 5 MiB and also bounds worker completion photos. `REPORT_ZONES` configures provisional labels without verified boundaries or coordinates. Browser GPS is requested only after the user chooses it and is shown as unverified. Reports start at `submitted`; see [docs/reports.md](docs/reports.md) and [docs/worker-tasks.md](docs/worker-tasks.md) for the review and field workflow.
 
 ## Structure
 

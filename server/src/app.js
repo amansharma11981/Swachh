@@ -17,7 +17,9 @@ import { authRoutes } from './routes/authRoutes.js'
 import { healthRoutes } from './routes/healthRoutes.js'
 import { userRoutes } from './routes/userRoutes.js'
 import { reportRoutes } from './routes/reportRoutes.js'
+import { taskRoutes } from './routes/taskRoutes.js'
 import { reportController } from './controllers/reportController.js'
+import { taskController } from './controllers/taskController.js'
 import { createImageStorage } from './services/imageStorage.js'
 import { AppError } from './utils/errors.js'
 import { logger } from './utils/logger.js'
@@ -48,11 +50,13 @@ export function createApp({ config, UserModel = User, ReportModel = Report, Coun
   const authHandlers = authController({ authService, config })
   const userHandlers = userController({ UserModel })
   const reportHandlers = reportController({ ReportModel, CounterModel, ZoneModel, imageStorage })
+  const taskHandlers = taskController({ ReportModel, UserModel, imageStorage })
   const api = express.Router()
   api.use('/health', healthRoutes(getDatabaseStatus))
   api.use('/auth', authRoutes({ controller: authHandlers, authenticate }))
   api.use('/users', userRoutes({ controller: userHandlers, authenticate }))
   api.use('/reports', reportRoutes({ controller: reportHandlers, authenticate, config }))
+  api.use('/tasks', taskRoutes({ controller: taskHandlers, authenticate, config }))
   app.use('/api/v1', api)
   app.use(notFoundHandler)
   app.use(errorHandler)

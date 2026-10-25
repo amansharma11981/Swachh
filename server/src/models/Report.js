@@ -4,7 +4,7 @@ export const REPORT_CATEGORIES = [
   'general_garbage', 'plastic_waste', 'organic_waste', 'construction_debris',
   'overflowing_dustbin', 'public_area_litter', 'drain_blockage', 'other',
 ]
-export const REPORT_STATUSES = ['submitted', 'under_review', 'assigned', 'in_progress', 'resolved', 'rejected', 'duplicate', 'reopened']
+export const REPORT_STATUSES = ['submitted', 'under_review', 'assigned', 'in_progress', 'submitted_for_verification', 'resolved', 'rejected', 'duplicate', 'reopened']
 
 const imageSchema = new mongoose.Schema({
   provider: { type: String, enum: ['cloudinary'], required: true },
@@ -28,6 +28,23 @@ const statusHistorySchema = new mongoose.Schema({
   note: { type: String, maxlength: 300, default: '' },
 }, { _id: false })
 
+const taskNoteSchema = new mongoose.Schema({
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  body: { type: String, required: true, trim: true, minlength: 1, maxlength: 500 },
+  createdAt: { type: Date, default: Date.now },
+}, { _id: false })
+
+const assignmentHistorySchema = new mongoose.Schema({
+  action: { type: String, enum: ['assigned', 'reassigned', 'assignment_updated', 'accepted', 'status_changed', 'note_added', 'evidence_added', 'submitted_for_verification', 'approved', 'returned'], required: true },
+  actor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  fromWorker: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  toWorker: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  fromStatus: { type: String, enum: [...REPORT_STATUSES, null], default: null },
+  toStatus: { type: String, enum: REPORT_STATUSES },
+  note: { type: String, trim: true, maxlength: 500, default: '' },
+  timestamp: { type: Date, default: Date.now },
+}, { _id: false })
+
 const reportSchema = new mongoose.Schema({
   reportNumber: { type: String, required: true, unique: true, immutable: true },
   reporter: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, immutable: true },
@@ -42,13 +59,23 @@ const reportSchema = new mongoose.Schema({
   zone: { zoneId: { type: String, trim: true }, name: { type: String, trim: true }, boundaryVerified: { type: Boolean, default: false } },
   images: { type: [imageSchema], required: true, validate: { validator: (items) => items.length > 0, message: 'At least one image is required' } },
   status: { type: String, enum: REPORT_STATUSES, default: 'submitted', required: true },
-  priority: { type: String, enum: ['normal'], default: 'normal', required: true },
+  priority: { type: String, enum: ['low', 'normal', 'high', 'urgent'], default: 'normal', required: true },
   statusHistory: { type: [statusHistorySchema], default: [] },
   assignedWorker: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  assignedAt: { type: Date, default: null },
+  dueAt: { type: Date, default: null },
+  assignmentStatus: { type: String, enum: ['unassigned', 'active', 'submitted_for_verification', 'needs_work', 'completed'], default: 'unassigned' },
+  progressNotes: { type: [taskNoteSchema], default: [] },
+  completionEvidence: { type: [imageSchema], default: [] },
+  assignmentHistory: { type: [assignmentHistorySchema], default: [] },
+  verificationNote: { type: String, trim: true, maxlength: 500, default: '' },
   resolvedAt: { type: Date, default: null },
-}, { timestamps: true, strict: 'throw' })
+}, { timestamps: true, strict: 'throw', optimisticConcurrency: true })
 
 reportSchema.index({ reporter: 1, createdAt: -1 })
+reportSchema.index({ assignedWorker: 1, status: 1, updatedAt: -1 })
+reportSchema.index({ status: 1, createdAt: -1 })
 
 export const Report = mongoose.models.Report || mongoose.model('Report', reportSchema)
 

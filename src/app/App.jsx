@@ -11,6 +11,9 @@ const CitizenDashboardPage = lazy(() => import('../pages/CitizenDashboardPage.js
 const ReportFormPage = lazy(() => import('../pages/ReportFormPage.jsx'))
 const MyReportsPage = lazy(() => import('../pages/MyReportsPage.jsx'))
 const ReportDetailPage = lazy(() => import('../pages/ReportDetailPage.jsx'))
+const WorkerDashboardPage = lazy(() => import('../pages/WorkerDashboardPage.jsx'))
+const WorkerTaskPage = lazy(() => import('../pages/WorkerTaskPage.jsx'))
+const AdminTaskPage = lazy(() => import('../pages/AdminTaskPage.jsx'))
 
 function titleFor(path) {
   const clean = path.split('/').filter(Boolean)
@@ -28,12 +31,12 @@ export default function App() {
       <Route path="/forbidden" element={<ForbiddenPage />} />
     </Route>
     {['app', 'worker', 'admin'].map((area) => <Route key={area} path={`/${area}`} element={<ProtectedRoute roles={area === 'app' ? ['citizen'] : [area]}><AppLayout area={area} /></ProtectedRoute>}>
-      <Route index element={area === 'app' ? <CitizenDashboardPage /> : <PlaceholderPage title={titleFor(`/${area}`)} area={area} />} />
+      <Route index element={area === 'app' ? <CitizenDashboardPage /> : area === 'worker' ? <WorkerDashboardPage /> : <AdminTaskPage />} />
       <Route path="report" element={area === 'app' ? <ReportFormPage /> : <PlaceholderPage title="Report an issue" area={area} />} />
-      <Route path="reports" element={area === 'app' ? <MyReportsPage /> : <PlaceholderPage title="Reports" area={area} />} />
+      <Route path="reports" element={area === 'app' ? <MyReportsPage /> : area === 'admin' ? <AdminTaskPage /> : <PlaceholderPage title="Reports" area={area} />} />
       <Route path="reports/:id" element={area === 'app' ? <ReportDetailPage /> : <PlaceholderPage title={area === 'admin' ? 'Report review' : 'Report detail'} area={area} />} />
-      <Route path="tasks" element={<PlaceholderPage title="Assigned tasks" area={area} />} />
-      <Route path="tasks/:id" element={<PlaceholderPage title="Task detail" area={area} />} />
+      <Route path="tasks" element={area === 'worker' ? <WorkerDashboardPage /> : <PlaceholderPage title="Assigned tasks" area={area} />} />
+      <Route path="tasks/:id" element={area === 'worker' ? <WorkerTaskPage /> : <PlaceholderPage title="Task detail" area={area} />} />
       <Route path="map" element={<PlaceholderPage title={area === 'admin' ? 'Operational map' : area === 'worker' ? 'Worker map' : 'Cleanliness map'} area={area} />} />
       <Route path="profile" element={<PlaceholderPage title="Profile" area={area} />} />
       <Route path="zones" element={<PlaceholderPage title="Pilot zones" area={area} />} />

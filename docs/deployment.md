@@ -1,6 +1,6 @@
 # Production deployment
 
-This repository is prepared for a Vercel static frontend, a Render Node web service, MongoDB Atlas, and Cloudinary. The checked-in manifests do not contain credentials. No provider account is currently linked to this workspace, and no Git remote is configured, so creating the manifests does not publish the app.
+This repository supports a Vercel static frontend, a Railway or Render Node web service, MongoDB Atlas, and Cloudinary. The checked-in manifests do not contain credentials. Railway and Render deploy the API from `server/`; connect the GitHub repository and configure each provider before production use.
 
 ## Readiness and limitations
 
@@ -8,7 +8,7 @@ This repository is prepared for a Vercel static frontend, a Render Node web serv
 - The frontend API client reads `VITE_API_BASE_URL`; set this to the deployed API origin plus `/api/v1` in Vercel. The local default `/api/v1` is for development proxying and must not be used for a Vercel deployment without an API proxy rewrite.
 - The only Vite variables are public API/proxy/upload-size settings. Never add server credentials to Vercel `VITE_*` variables.
 - Render's health check uses `/api/v1/health`, which returns HTTP 200 only when MongoDB is connected.
-- The report submission and citizen tracking workflow exists. Worker and operational-admin pages remain placeholders; do not represent assignment, review, or resolution workflows as available.
+- Citizen reporting, worker task management, and operational-admin assignment workflows are implemented. These still require a reachable production API and accounts with the appropriate roles.
 - Exact coordinates currently have no automatic retention policy, and Cloudinary image delivery URLs are publicly retrievable if shared. Set retention and image/privacy policy before accepting real public reports. A restricted academic demo is a safer first deployment.
 - Preview deployments use different origins. The API allowlist accepts only the exact `CLIENT_URL`; preview sign-in/API writes will fail unless the preview origin is explicitly configured for a separate non-production backend.
 
@@ -17,15 +17,27 @@ This repository is prepared for a Vercel static frontend, a Render Node web serv
 1. Push this repository to a GitHub repository and import it in Vercel. Use the repository root as the project root, Vite as the framework, `npm run build` as the build command, and `dist` as the output directory. `vercel.json` supplies the SPA fallback rewrite for deep links.
 2. Add these Production environment variables in Vercel:
 
-   - `VITE_API_BASE_URL=https://<your-render-service>.onrender.com/api/v1`
+   - `VITE_API_BASE_URL=https://<your-api-domain>/api/v1`
    - `VITE_REPORT_MAX_IMAGE_SIZE_BYTES=5242880`
 
-   Replace the host with the actual Render service URL. These are public build-time settings; no secret belongs in a `VITE_` variable.
+   Replace the host with the actual Railway or Render service URL. These are public build-time settings; no secret belongs in a `VITE_` variable.
 3. Redeploy after setting the values. Confirm the homepage and a nested route both load after a hard refresh.
 
 Vercel's SPA rewrite follows its documented `vercel.json` configuration pattern: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite), [Vercel rewrites](https://vercel.com/docs/routing/rewrites).
 
-## Render API
+## Railway API
+
+1. Push the latest code to GitHub. In Railway, create a project and choose **Deploy from GitHub repo**, then select this repository and the production branch.
+2. Open the API service **Settings** and set **Root Directory** to `/server`. The backend has its own `package.json` and lockfile in that folder. Leave the build command at its detected default and set the start command to `npm start` if Railway does not detect it automatically.
+3. In **Variables**, add `NODE_ENV=production`, `MONGODB_URI`, a unique `JWT_SECRET` of at least 32 characters, and `CLIENT_URL` set to the exact Vercel production origin (for example `https://your-site.vercel.app`, with no path or trailing slash).
+4. Because Vercel and Railway use different sites, also set `COOKIE_SECURE=true` and `COOKIE_SAME_SITE=none`. Keep the API's exact-origin CORS/Origin allowlist through `CLIENT_URL`.
+5. For report image uploads, add `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Keep all backend secrets in Railway Variables; do not use Vercel `VITE_*` variables for them. Railway injects `PORT`, so do not hardcode or set a separate port.
+6. In the service's deployment settings, set the healthcheck path to `/api/v1/health`. Generate a public domain under **Networking**, deploy, then check `https://<your-railway-domain>/api/v1/health`. A healthy response returns HTTP 200 with `database: "connected"`.
+7. In Vercel, set `VITE_API_BASE_URL=https://<your-railway-domain>/api/v1` for Production and redeploy the frontend. Sign-in uses an HttpOnly cross-site cookie; some browser privacy settings restrict third-party cookies across unrelated provider domains. If sign-in does not persist, use custom domains under the same site or a same-origin API proxy.
+
+Railway supports setting a monorepo service's root directory and healthcheck in service settings: [Deploying a monorepo](https://docs.railway.com/deployments/monorepo), [healthchecks](https://docs.railway.com/deployments/healthchecks), [variables](https://docs.railway.com/variables).
+
+## Render API (alternative)
 
 1. In Render, create a Blueprint from the GitHub repository using `render.yaml`. It defines the API root directory, `npm ci`, `npm start`, and `/api/v1/health` readiness probe.
 2. During Blueprint setup, provide `MONGODB_URI` and `CLIENT_URL`. Set `CLIENT_URL` to the exact Vercel production origin, without a path or trailing slash.
@@ -58,6 +70,6 @@ Before enabling provider auto-deploys, require the CI check to pass on the produ
 
 Vercel and Render retain prior deployments. If a production deploy fails health or smoke checks, use the provider dashboard to restore the last known-good deployment, then revert the corresponding Git commit and redeploy after CI passes. Avoid rolling back environment variables or Atlas data independently without checking schema compatibility. Phase 4 introduces no database migration or destructive data operation.
 
-## Current workspace blockers
+## Current workspace status
 
-This checkout has no commits and no Git remote, and no Vercel/Render/GitHub connector is available in the current task. To deploy, create/select the GitHub repository, commit and push the reviewed files, import it into both providers, and enter secrets in the provider dashboards. Do not paste secrets into chat or commit them.
+The GitHub remote is configured for `amansharma11981/Swachh`. Provider accounts are configured separately in their dashboards. Push reviewed changes to the intended branch, then confirm the corresponding Railway, Render, or Vercel deployment completed successfully. Do not paste secrets into chat or commit them.

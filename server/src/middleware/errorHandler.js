@@ -12,6 +12,8 @@ export function errorHandler(error, request, response, _next) {
     details = error.issues.map((issue) => ({ field: issue.path.join('.'), message: issue.message }))
   } else if (error?.code === 11000) {
     status = 409; code = 'CONFLICT'; message = 'A record with this information already exists'; details = undefined
+  } else if (error?.name === 'VersionError') {
+    status = 409; code = 'CONCURRENT_UPDATE'; message = 'This report changed while you were updating it. Reload it and try again.'; details = undefined
   } else if (error?.type === 'entity.too.large') {
     status = 413; code = 'PAYLOAD_TOO_LARGE'; message = 'Request body is too large'; details = undefined
   } else if (error?.type === 'entity.parse.failed') {

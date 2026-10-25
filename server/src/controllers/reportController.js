@@ -14,7 +14,7 @@ async function pagedQuery(Model, filter, page, limit) {
 }
 
 function statusFilter(status) {
-  return status === 'in_progress' ? { $in: ['assigned', 'in_progress', 'reopened'] } : status
+  return status === 'in_progress' ? { $in: ['assigned', 'in_progress', 'submitted_for_verification', 'reopened'] } : status
 }
 
 export function reportController({ ReportModel, CounterModel, ZoneModel, imageStorage }) {
@@ -98,7 +98,7 @@ export function reportController({ ReportModel, CounterModel, ZoneModel, imageSt
       const [total, awaitingReview, inProgress, resolved, recent] = await Promise.all([
         ReportModel.countDocuments(base),
         ReportModel.countDocuments({ ...base, status: { $in: initialStatuses } }),
-        ReportModel.countDocuments({ ...base, status: { $in: ['assigned', 'in_progress', 'reopened'] } }),
+        ReportModel.countDocuments({ ...base, status: { $in: ['assigned', 'in_progress', 'submitted_for_verification', 'reopened'] } }),
         ReportModel.countDocuments({ ...base, status: 'resolved' }),
         ReportModel.find(base).sort({ createdAt: -1, _id: -1 }).limit(5).lean(),
       ])
