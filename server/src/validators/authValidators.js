@@ -8,6 +8,7 @@ export const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   confirmPassword: z.string().max(128).optional(),
+  requestedRole: z.enum(['citizen', 'worker', 'admin']).default('citizen'),
 }).strict().refine((data) => !data.confirmPassword || data.password === data.confirmPassword, { path: ['confirmPassword'], message: 'Passwords do not match' })
 
 export const loginSchema = z.object({ email: emailSchema, password: z.string().min(1).max(128) }).strict()
@@ -17,3 +18,4 @@ export const profileSchema = z.object({
   avatarUrl: z.string().url().max(2048).optional().or(z.literal('')),
 }).strict().refine((data) => Object.keys(data).length > 0, { message: 'Provide at least one profile field' })
 export const roleSchema = z.object({ role: z.enum(['citizen', 'worker', 'admin']) }).strict()
+export const approvalSchema = z.object({ decision: z.enum(['approve', 'reject']) }).strict()

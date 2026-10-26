@@ -62,7 +62,7 @@ Before enabling provider auto-deploys, require the CI check to pass on the produ
 
 ## First account and smoke checks
 
-- Public registration only creates citizen accounts. The initial administrator must be seeded once with the documented `INITIAL_ADMIN_*` variables against the production API, then those values must be removed. Do not expose an admin seeding endpoint.
+- Citizen registration activates immediately. Worker and administrator signup requests must be approved by an existing administrator. The initial administrator must be seeded once with the documented `INITIAL_ADMIN_*` variables against the production API, then those values must be removed. Do not add default credentials or expose an admin seeding endpoint.
 - After deploy, verify `/api/v1/health`, registration/login, session restoration, logout, report submission with a non-sensitive test image, citizen-owned report listing, and a nested-route refresh.
 - Remove the test report and Cloudinary object through an authorized operational procedure after smoke checks; there is no public delete endpoint.
 

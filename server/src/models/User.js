@@ -6,6 +6,8 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, lowercase: true, trim: true, maxlength: 254, match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
   passwordHash: { type: String, required: true, select: false },
   role: { type: String, enum: ['citizen', 'worker', 'admin'], default: 'citizen', required: true },
+  requestedRole: { type: String, enum: ['citizen', 'worker', 'admin', null], default: null },
+  approvalStatus: { type: String, enum: ['approved', 'pending', 'rejected'], default: 'approved', required: true },
   isActive: { type: Boolean, default: true, required: true },
   avatarUrl: { type: String, maxlength: 2048 },
   phone: { type: String, maxlength: 30 },

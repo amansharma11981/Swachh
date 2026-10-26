@@ -68,17 +68,17 @@ The backend can also be run from its directory with `npm run dev`, `npm start`, 
 
 ## Initial administrator
 
-Public registration always creates a citizen and rejects unexpected privilege fields. Passwords must be 8–128 characters. There is no public admin registration. For the first administrator only, set `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL`, and a unique 8–128 character `INITIAL_ADMIN_PASSWORD` in `server/.env`, then run:
+Public registration creates a citizen immediately. Worker and administrator signups create inactive access requests; only an existing administrator can approve them. Passwords must be 8–128 characters. There are no default admin credentials. For the first administrator only, set `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL`, and a unique 8–128 character `INITIAL_ADMIN_PASSWORD` in `server/.env`, then run:
 
 ```bash
 npm run seed:admin
 ```
 
-The command creates exactly the configured admin, refuses to modify an existing account, hashes the password, and closes its database connection. Remove or unset the three `INITIAL_ADMIN_*` values from `server/.env` immediately after setup. To create a worker later, an authenticated administrator can use `PATCH /api/v1/users/:id/role`; public users cannot promote themselves.
+The command creates exactly the configured admin, refuses to modify an existing account, hashes the password, and closes its database connection. Remove or unset the three `INITIAL_ADMIN_*` values from `server/.env` immediately after setup. Administrators review elevated signup requests at `/admin/access-requests`; the protected `PATCH /api/v1/users/:id/role` endpoint remains available for managed role changes. Never publish or hardcode shared admin credentials.
 
 ## Authentication and security
 
-- Registration creates a citizen account and signs the user in.
+- Citizen registration creates an account and signs the user in; worker/admin registrations remain pending until approved by an existing administrator.
 - Login uses a generic invalid-credentials response and rate-limited endpoint.
 - JWTs last two hours by default and are stored only in an HttpOnly cookie scoped to `/api/v1`; the default SameSite policy is `lax`. Production requires Secure cookies.
 - State-changing requests require an exact allowed `Origin`. SameSite cookies and this origin check are the CSRF defenses; the browser API client sends JSON and credentials.

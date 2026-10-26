@@ -6,7 +6,7 @@ import { useAuth } from '../features/auth/AuthProvider.jsx'
 const navByArea = {
   app: [['app', 'Overview', 'activity'], ['app/report', 'Report an issue', 'camera'], ['app/reports', 'My reports', 'route'], ['app/map', 'Cleanliness map', 'map'], ['app/profile', 'Profile', 'users']],
   worker: [['worker', 'Overview', 'activity'], ['worker/tasks', 'Assigned tasks', 'check'], ['worker/map', 'Team map', 'map'], ['worker/profile', 'Profile', 'users']],
-  admin: [['admin', 'Overview', 'activity'], ['admin/reports', 'Reports', 'route'], ['admin/map', 'Operations map', 'map'], ['admin/workers', 'Workers', 'users'], ['admin/zones', 'Pilot zones', 'mapPin'], ['admin/bins', 'Smart bins', 'recycle'], ['admin/analytics', 'Analytics', 'chart'], ['admin/settings', 'Settings', 'activity']],
+  admin: [['admin', 'Overview', 'activity'], ['admin/reports', 'Reports', 'route'], ['admin/access-requests', 'Access requests', 'users'], ['admin/map', 'Operations map', 'map'], ['admin/workers', 'Workers', 'users'], ['admin/zones', 'Pilot zones', 'mapPin'], ['admin/bins', 'Smart bins', 'recycle'], ['admin/analytics', 'Analytics', 'chart'], ['admin/settings', 'Settings', 'activity']],
 }
 const headings = { app: 'CITIZEN SPACE', worker: 'FIELD TEAM', admin: 'OPERATIONS' }
 

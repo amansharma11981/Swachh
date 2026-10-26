@@ -28,9 +28,11 @@ export function AuthProvider({ children }) {
     return loggedInUser
   }, [])
   const register = useCallback(async (input) => {
-    const { user: newUser } = await authService.register(input)
-    setSessionError(null); setUser(newUser); setStatus('authenticated')
-    return newUser
+    const result = await authService.register(input)
+    if (!result.approvalRequired) {
+      setSessionError(null); setUser(result.user); setStatus('authenticated')
+    }
+    return result
   }, [])
   const logout = useCallback(async () => {
     await authService.logout()

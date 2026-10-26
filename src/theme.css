@@ -1,0 +1,58 @@
+/* Neutral graphite and clay theme */
+:root {
+  color-scheme: dark;
+  --bg: #111110;
+  --bg-deep: #0d0d0c;
+  --panel: #191817;
+  --panel-light: #22201e;
+  --accent: #cf9e75;
+  --text: #f3efeb;
+  --muted: #aaa39d;
+  --subtle: #817a74;
+  --border: #34312e;
+  --content: 1200px;
+}
+
+body { background: var(--bg); color: var(--text); }
+.site-header.is-scrolled { background: #111110ed; border-color: #ffffff12; }
+.hero { background: radial-gradient(ellipse at 72% 42%, #29252275 0, transparent 40%), var(--bg); }
+.hero-noise { display: none; }
+.hero-orbit { border-color: #ffffff0a; }
+.orbit-two { border-color: #ffffff06; }
+.hero-art { transform: none; border-radius: 10px; box-shadow: 0 20px 60px #0005; }
+.map-float { border-radius: 6px; box-shadow: 0 8px 24px #0004; }
+.command-panel,.command-map-wrap,.report-panel,.feature-item,.impact-card,
+.step-card,.zone-card,.auth-card,.coming-panel,.inline-note,.report-form-section,
+.report-review,.report-card,.report-detail-panel,.workspace-sidebar,
+.task-stat,.task-panel,.admin-task-card,.access-request-card {
+  border-radius: 8px;
+}
+.brand-mark,.small-mark,.step-icon,.feature-glyph,.coming-icon,.proof-mark,
+.task-stat>span,.access-request-avatar { border-radius: 5px; }
+.button,.nav-cta,.site-header button,.workspace-account button,
+input,select,textarea,.task-search button,.report-pagination button,
+.admin-assign-form>button,.task-inline-form button,.task-actions>button,
+.admin-review-actions button,.access-request-actions button,.access-refresh {
+  border-radius: 6px;
+}
+.button { transition-duration: .16s; }
+.button:hover { transform: translateY(-1px); }
+.desktop-nav a,.sign-in-link,.workspace-sidebar nav a { font-size: 12px; }
+.auth-card .auth-field input,.auth-card .auth-field select { min-height: 45px; font-size: 13px; }
+.auth-card .form-message { font-size: 12px; }
+.workspace-sidebar nav a { min-height: 44px; }
+.workspace-content { max-width: 1480px; margin-inline: auto; }
+.tasks-page .task-card,.tasks-page .task-panel,.tasks-page .admin-task-card,
+.tasks-page .task-stat,.access-requests-page .access-request-card {
+  border-radius: 8px;
+}
+.tasks-page .task-card:hover { border-color: #69615a; }
+.report-card-image,.report-detail-images img,.report-detail-images a,
+.admin-evidence-strip a,.task-images a { border-radius: 5px; }
+.report-empty,.report-success { border-radius: 10px; }
+
+@media (max-width: 720px) {
+  .container { width: calc(100% - 40px); }
+  .section-pad { padding-block: 88px; }
+  .workspace-content { padding: 38px 20px; }
+}

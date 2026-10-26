@@ -12,9 +12,15 @@ export function createAuthService({ UserModel, config, passwordHasher = bcrypt, 
 
   async function register(input) {
     const passwordHash = await passwordHasher.hash(input.password, 12)
+    const requestedRole = input.requestedRole || 'citizen'
+    const requiresApproval = requestedRole !== 'citizen'
     try {
-      const user = await UserModel.create({ name: input.name, email: input.email, passwordHash, role: 'citizen' })
-      return { user: toSafeUser(user), sessionToken: createToken(user) }
+      const user = await UserModel.create({
+        name: input.name, email: input.email, passwordHash,
+        role: 'citizen', requestedRole: requiresApproval ? requestedRole : null,
+        approvalStatus: requiresApproval ? 'pending' : 'approved', isActive: !requiresApproval,
+      })
+      return { user: toSafeUser(user), sessionToken: requiresApproval ? null : createToken(user), approvalRequired: requiresApproval }
     } catch (error) {
       if (error?.code === 11000) throw new AppError(409, 'EMAIL_IN_USE', 'An account with this email already exists')
       throw error

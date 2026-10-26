@@ -19,11 +19,11 @@ export default function ReportDetailPage() {
   }, [id, retry])
 
   if (loading) return <div className="report-loading" role="status"><LoaderCircle className="spin-icon" size={19} />Loading report details…</div>
-  if (error) return <div className="report-detail-page"><Link to="/app/reports" className="text-link"><ArrowLeft size={15} />My reports</Link><div className="report-empty report-detail-error"><span><MapPin size={20} /></span><h1>Report unavailable<span className="lime-dot">.</span></h1><p>{error.includes('not found') ? 'This report does not exist or is not available to your account.' : error}</p><button className="text-link" type="button" onClick={() => setRetry((value) => value + 1)}><RefreshCw size={14} />Try again</button></div></div>
+  if (error) return <div className="report-detail-page"><Link to="/app/reports" className="text-link"><ArrowLeft size={15} />My reports</Link><div className="report-empty report-detail-error"><span><MapPin size={20} /></span><h1>Report unavailable<span className="accent-dot">.</span></h1><p>{error.includes('not found') ? 'This report does not exist or is not available to your account.' : error}</p><button className="text-link" type="button" onClick={() => setRetry((value) => value + 1)}><RefreshCw size={14} />Try again</button></div></div>
 
   return <div className="report-detail-page">
     <Link to="/app/reports" className="text-link"><ArrowLeft size={15} />Back to my reports</Link>
-    <div className="report-detail-heading"><div><div className="eyebrow"><span className="eyebrow-line" />REPORT TRACKING</div><h1>{report.reportNumber}<span className="lime-dot">.</span></h1><p>{reportCategoryLabel(report.category)} · submitted {reportDate(report.createdAt)}</p></div><ReportStatus status={report.status} /></div>
+    <div className="report-detail-heading"><div><div className="eyebrow"><span className="eyebrow-line" />REPORT TRACKING</div><h1>{report.reportNumber}<span className="accent-dot">.</span></h1><p>{reportCategoryLabel(report.category)} · submitted {reportDate(report.createdAt)}</p></div><ReportStatus status={report.status} /></div>
     <div className="report-detail-grid"><div className="report-detail-main">
       <section className="report-detail-panel"><span className="demo-label">PHOTO EVIDENCE</span><div className="report-detail-images">{report.images?.map((image) => <img key={image.assetId} src={image.secureUrl} alt={`Photo attached to ${report.reportNumber}`} />)}</div></section>
       <section className="report-detail-panel"><span className="demo-label">WHAT WAS REPORTED</span><h2>{reportCategoryLabel(report.category)}</h2><p className="report-detail-description">{report.description}</p></section>

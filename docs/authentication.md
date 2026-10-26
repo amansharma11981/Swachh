@@ -4,7 +4,7 @@
 
 1. The browser loads `AuthProvider`, which calls `GET /api/v1/auth/me` with credentials.
 2. The API reads the HttpOnly session cookie, verifies the JWT signature, issuer, audience, and expiry, then loads the current user. Inactive or missing users receive 401.
-3. Registration validates input, hashes the password, creates role `citizen` regardless of any attempted role assignment, and issues the normal session cookie.
+3. Registration validates input and hashes the password. Citizen requests activate immediately with a session cookie. Worker/admin requests are stored as inactive pending accounts without a session; an existing administrator must approve them at `/admin/access-requests`.
 4. Login validates credentials with a generic failure response and sets the same cookie.
 5. Protected React layouts wait for session restoration and check the display role. Express middleware independently checks the database-backed user and route policy.
 6. Logout expires the cookie. A copied JWT is not revoked and expires within the configured lifetime (two hours by default).
@@ -17,7 +17,7 @@ Passwords must be 8–128 characters. bcrypt cost is 12. Password confirmation i
 
 Cookies are HttpOnly, have `Path=/api/v1`, and use SameSite=Lax by default. Production requires `COOKIE_SECURE=true`; SameSite=None also requires Secure. CORS only allows configured `CLIENT_URL` origins with credentials. Unsafe HTTP methods require an exact allowed Origin. Deploy the browser and API same-site where practical.
 
-There is no persistent refresh session, token revocation list, email verification, or password reset in this phase.
+There is no persistent refresh session, token revocation list, email verification, or password reset in this phase. There are no shared/default administrator credentials. The initial admin must be provisioned through the one-time server-side seed process; elevated signup requests cannot approve themselves.
 
 ## Role matrix
 

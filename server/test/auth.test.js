@@ -26,7 +26,12 @@ TestUser.create = async (values) => {
 TestUser.findByEmail = async (email) => [...TestUser.records.values()].find((user) => user.email === email) || null
 TestUser.findSafeById = async (id) => TestUser.records.get(String(id)) || null
 TestUser.countDocuments = async (query) => [...TestUser.records.values()].filter((user) => Object.entries(query).every(([key, value]) => user[key] === value)).length
-TestUser.find = () => ({ sort() { return this }, limit() { return this }, lean: async () => [...TestUser.records.values()].map((user) => user.toObject()) })
+TestUser.find = (query = {}) => ({
+  sort() { return this }, limit() { return this },
+  lean: async () => [...TestUser.records.values()].filter((user) => Object.entries(query).every(([key, value]) => (
+    value && typeof value === 'object' && '$in' in value ? value.$in.includes(user[key]) : user[key] === value
+  ))).map((user) => user.toObject()),
+})
 
 function freshApp() {
   TestUser.records = new Map(); TestUser.nextId = 1
@@ -53,6 +58,31 @@ test('registration validates inputs and refuses attempted role escalation', asyn
   await origin(request(app).post('/api/v1/auth/register').send(registerPayload({ password: 'Abcd123', confirmPassword: 'Abcd123' }))).expect(400)
   await origin(request(app).post('/api/v1/auth/register').send(registerPayload({ role: 'admin' }))).expect(400)
   assert.equal(model.records.size, 0)
+})
+
+test('worker and admin registration requests remain inactive until an admin approves them', async () => {
+  const { app, model } = freshApp()
+  const workerResponse = await origin(request(app).post('/api/v1/auth/register').send(registerPayload({ requestedRole: 'worker' }))).expect(202)
+  assert.equal(workerResponse.body.data.approvalRequired, true)
+  assert.equal(workerResponse.headers['set-cookie'], undefined)
+  assert.equal(workerResponse.body.data.user.role, 'citizen')
+  assert.equal(workerResponse.body.data.user.requestedRole, 'worker')
+  assert.equal(workerResponse.body.data.user.approvalStatus, 'pending')
+  assert.equal(workerResponse.body.data.user.isActive, false)
+  const adminRequest = await origin(request(app).post('/api/v1/auth/register').send(registerPayload({ email: 'new-admin@example.test', requestedRole: 'admin' }))).expect(202)
+  assert.equal(adminRequest.body.data.user.requestedRole, 'admin')
+  assert.equal(model.records.size, 2)
+
+  const administrator = await model.create({ name: 'Administrator', email: 'admin@example.test', passwordHash: await bcrypt.hash('SafeAdminPassword!', 12), role: 'admin' })
+  const administratorToken = jwt.sign({}, config.jwtSecret, { subject: administrator.id, expiresIn: '2h', issuer: 'swachhai-api', audience: 'swachhai-web' })
+  const requestAgent = request.agent(app)
+  const queue = await origin(requestAgent.get('/api/v1/users/approval-requests').set('Cookie', `${config.cookieName}=${administratorToken}`)).expect(200)
+  assert.equal(queue.body.data.requests.length, 2)
+  await origin(requestAgent.patch(`/api/v1/users/${workerResponse.body.data.user.id}/approval`).set('Cookie', `${config.cookieName}=${administratorToken}`).send({ decision: 'approve' })).expect(200)
+  const approvedWorker = model.records.get(workerResponse.body.data.user.id)
+  assert.equal(approvedWorker.role, 'worker')
+  assert.equal(approvedWorker.isActive, true)
+  assert.equal(approvedWorker.approvalStatus, 'approved')
 })
 
 test('an eight-character password can register and then log in', async () => {

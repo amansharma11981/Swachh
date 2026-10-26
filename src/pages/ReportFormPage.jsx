@@ -88,12 +88,12 @@ export default function ReportFormPage() {
 
   if (createdReport) return <section className="report-page">
     <div className="eyebrow"><span className="eyebrow-line" />CITIZEN SPACE / REPORT RECEIVED</div>
-    <div className="report-success"><span className="success-icon"><CheckCircle2 size={27} /></span><p className="demo-label">SUBMITTED TO THE PILOT SYSTEM</p><h1>Thank you for<br />making it visible<span className="lime-dot">.</span></h1><p>Your report was saved. You can follow its status from your report details.</p><div className="success-number">REPORT ID <strong>{createdReport.reportNumber}</strong></div><div className="report-actions"><Button to={`/app/reports/${createdReport.id}`} icon="arrowUpRight">Track this report</Button><Link className="text-link" to="/app/reports">View my reports <ArrowUpRight size={15} /></Link></div></div>
+    <div className="report-success"><span className="success-icon"><CheckCircle2 size={27} /></span><p className="demo-label">SUBMITTED TO THE PILOT SYSTEM</p><h1>Thank you for<br />making it visible<span className="accent-dot">.</span></h1><p>Your report was saved. You can follow its status from your report details.</p><div className="success-number">REPORT ID <strong>{createdReport.reportNumber}</strong></div><div className="report-actions"><Button to={`/app/reports/${createdReport.id}`} icon="arrowUpRight">Track this report</Button><Link className="text-link" to="/app/reports">View my reports <ArrowUpRight size={15} /></Link></div></div>
   </section>
 
   return <section className="report-page">
     <div className="eyebrow"><span className="eyebrow-line" />CITIZEN SPACE / NEW REPORT</div>
-    <div className="report-page-heading"><div><h1>Report an issue<span className="lime-dot">.</span></h1><p>Share a clear description and location. Your report enters the pilot review queue.</p></div><Link className="text-link" to="/app/reports">My reports <ArrowUpRight size={15} /></Link></div>
+    <div className="report-page-heading"><div><h1>Report an issue<span className="accent-dot">.</span></h1><p>Share a clear description and location. Your report enters the pilot review queue.</p></div><Link className="text-link" to="/app/reports">My reports <ArrowUpRight size={15} /></Link></div>
 
     {storageConfigured === false && <div className="report-config-notice"><AlertCircle size={17} /><span>Image uploads require the administrator to configure Cloudinary storage. Your form can be prepared, but submission will stay unavailable until storage is enabled.</span></div>}
     {error && <div className="report-form-alert" role="alert"><AlertCircle size={18} /><span>{error}</span></div>}

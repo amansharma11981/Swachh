@@ -14,7 +14,7 @@ Public. Returns `status` (`ok` or `degraded`), `database` (`connected` or `disco
 
 ### `POST /auth/register`
 
-Public and rate limited. Body: `{ "name": "Aman Singh", "email": "aman@example.test", "password": "long-password", "confirmPassword": "long-password" }`. Password is 8–128 characters. The endpoint always creates a citizen, rejects unknown fields (including `role`), returns a safe user object, and sets the session cookie.
+Public and rate limited. Body: `{ "name": "Aman Singh", "email": "aman@example.test", "password": "long-password", "confirmPassword": "long-password", "requestedRole": "citizen" }`. `requestedRole` may be `citizen` (default), `worker`, or `admin`; the server never accepts a caller-supplied `role`. Citizen registration returns HTTP 201 and an authenticated session. Worker/admin requests return HTTP 202, create an inactive pending account, and do not set a session cookie. An existing administrator must approve the request before it can sign in.
 
 ### `POST /auth/login`
 
@@ -42,7 +42,11 @@ Admin only. Returns up to 100 safe user records.
 
 ### `PATCH /users/:id/role`
 
-Admin only. Body: `{ "role": "citizen" | "worker" | "admin" }`. The last active administrator cannot be demoted. There is no public role-management endpoint.
+Admin only. Body: `{ "role": "citizen" | "worker" | "admin" }`. Pending access requests must be handled through the approval endpoint. The last active administrator cannot be demoted.
+
+### Admin access requests
+
+Admin only. `GET /users/approval-requests` lists pending worker/admin signup requests. `PATCH /users/:id/approval` with `{ "decision": "approve" }` or `{ "decision": "reject" }` decides a request. Approval activates the requested role; rejected accounts stay inactive. No built-in/default admin credential exists; bootstrap the first administrator with the one-time server seed process.
 
 ## Citizen reports
 

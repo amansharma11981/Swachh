@@ -14,11 +14,12 @@ const ReportDetailPage = lazy(() => import('../pages/ReportDetailPage.jsx'))
 const WorkerDashboardPage = lazy(() => import('../pages/WorkerDashboardPage.jsx'))
 const WorkerTaskPage = lazy(() => import('../pages/WorkerTaskPage.jsx'))
 const AdminTaskPage = lazy(() => import('../pages/AdminTaskPage.jsx'))
+const AdminAccessRequestsPage = lazy(() => import('../pages/AdminAccessRequestsPage.jsx'))
 
 function titleFor(path) {
   const clean = path.split('/').filter(Boolean)
   const name = clean.at(-1) || 'Overview'
-  const labels = { app: 'Citizen dashboard', worker: 'Worker workspace', admin: 'Operations overview', report: 'Report an issue', reports: 'Reports', map: 'Cleanliness map', profile: 'Profile', tasks: 'Assigned tasks', bins: 'Smart-bin readiness', analytics: 'Operational analytics', zones: 'Pilot zones', settings: 'Settings', login: 'Sign in', register: 'Create account', impact: 'Impact & methodology', privacy: 'Privacy', accessibility: 'Accessibility', 'how-it-works': 'How it works' }
+  const labels = { app: 'Citizen dashboard', worker: 'Worker workspace', admin: 'Operations overview', report: 'Report an issue', reports: 'Reports', 'access-requests': 'Access requests', map: 'Cleanliness map', profile: 'Profile', tasks: 'Assigned tasks', bins: 'Smart-bin readiness', analytics: 'Operational analytics', zones: 'Pilot zones', settings: 'Settings', login: 'Sign in', register: 'Create account', impact: 'Impact & methodology', privacy: 'Privacy', accessibility: 'Accessibility', 'how-it-works': 'How it works' }
   return labels[name] || (name[0]?.toUpperCase() + name.slice(1))
 }
 
@@ -35,6 +36,7 @@ export default function App() {
       <Route path="report" element={area === 'app' ? <ReportFormPage /> : <PlaceholderPage title="Report an issue" area={area} />} />
       <Route path="reports" element={area === 'app' ? <MyReportsPage /> : area === 'admin' ? <AdminTaskPage /> : <PlaceholderPage title="Reports" area={area} />} />
       <Route path="reports/:id" element={area === 'app' ? <ReportDetailPage /> : <PlaceholderPage title={area === 'admin' ? 'Report review' : 'Report detail'} area={area} />} />
+      <Route path="access-requests" element={area === 'admin' ? <AdminAccessRequestsPage /> : <PlaceholderPage title="Access requests" area={area} />} />
       <Route path="tasks" element={area === 'worker' ? <WorkerDashboardPage /> : <PlaceholderPage title="Assigned tasks" area={area} />} />
       <Route path="tasks/:id" element={area === 'worker' ? <WorkerTaskPage /> : <PlaceholderPage title="Task detail" area={area} />} />
       <Route path="map" element={<PlaceholderPage title={area === 'admin' ? 'Operational map' : area === 'worker' ? 'Worker map' : 'Cleanliness map'} area={area} />} />

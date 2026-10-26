@@ -28,7 +28,7 @@ Every assignment, reassignment, acceptance, note, evidence upload, submission, r
 
 ## Worker provisioning
 
-Public signup creates citizen accounts only. An administrator can promote an existing account using the existing protected endpoint:
+Public signup lets users request citizen, worker, or administrator access. Citizen accounts activate immediately. Worker and administrator requests remain inactive until an existing administrator approves them in `/admin/access-requests`. An administrator can also change an active account's role using the protected endpoint:
 
 ```http
 PATCH /api/v1/users/USER_ID/role
@@ -37,7 +37,7 @@ Content-Type: application/json
 { "role": "worker" }
 ```
 
-After promotion, the user signs out and back in (or reloads after session restoration) to enter `/worker`. The administrator assignment page lists active workers and current active task counts.
+After approval or promotion, the user signs out and back in (or reloads after session restoration) to enter the corresponding workspace. The administrator assignment page lists active workers and current active task counts. The initial administrator must be created through the one-time `INITIAL_ADMIN_*` server seed; there are no default/shared administrator credentials and an account cannot approve its own request.
 
 ## Images and configuration
 

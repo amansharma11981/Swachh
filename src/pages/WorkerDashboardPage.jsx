@@ -31,7 +31,7 @@ export default function WorkerDashboardPage() {
 
   return <section className="tasks-page">
     <div className="eyebrow"><span className="eyebrow-line" />FIELD TEAM / MY WORK</div>
-    <div className="dashboard-heading"><div><h1>Worker dashboard<span className="lime-dot">.</span></h1><p>Your assigned work, progress, and completed tasks in one place.</p></div><Button to="/worker/tasks" icon="arrowUpRight">View all tasks</Button></div>
+    <div className="dashboard-heading"><div><h1>Worker dashboard<span className="accent-dot">.</span></h1><p>Your assigned work, progress, and completed tasks in one place.</p></div><Button to="/worker/tasks" icon="arrowUpRight">View all tasks</Button></div>
     {error && <div className="task-alert" role="alert"><span>{error}</span><button type="button" onClick={() => setAttempt((v) => v + 1)}><RefreshCw size={14} /> Try again</button></div>}
     <div className="task-stats" aria-label="Your task summary">{stats.map(([key, label, Icon]) => <article className="task-stat" key={key}><span><Icon size={17} /></span><div><small>{label}</small><strong>{loading ? '—' : dashboard?.stats?.[key] ?? 0}</strong></div></article>)}</div>
     <div className="section-title-row task-section-heading"><div><span className="demo-label">YOUR QUEUE</span><h2>Tasks to work on</h2></div><span className="task-count">{pagination?.total ?? 0} tasks</span></div>

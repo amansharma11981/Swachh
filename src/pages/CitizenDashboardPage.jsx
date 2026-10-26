@@ -27,7 +27,7 @@ export default function CitizenDashboardPage() {
 
   return <div className="citizen-dashboard">
     <div className="eyebrow"><span className="eyebrow-line" />CITIZEN SPACE / YOUR ACTIVITY</div>
-    <div className="dashboard-heading"><div><h1>Your reports<span className="lime-dot">.</span></h1><p>Follow the reports you have shared with the pilot team.</p></div><Button to="/app/report" icon="arrowUpRight">Report an issue</Button></div>
+    <div className="dashboard-heading"><div><h1>Your reports<span className="accent-dot">.</span></h1><p>Follow the reports you have shared with the pilot team.</p></div><Button to="/app/report" icon="arrowUpRight">Report an issue</Button></div>
     {error && <div className="report-form-alert" role="alert"><span>{error}</span><button className="text-link" onClick={() => setAttempt((value) => value + 1)} type="button"><RefreshCw size={14} />Try again</button></div>}
     <div className="dashboard-stats" aria-label="Your report summary">{statItems.map(([key, label, Icon]) => <article className="dashboard-stat" key={key}><span className="dashboard-stat-icon"><Icon size={17} /></span><span>{label}</span><strong>{loading ? '—' : dashboard?.stats?.[key] ?? '—'}</strong></article>)}</div>
     <div className="section-title-row"><div><span className="demo-label">LATEST UPDATES</span><h2>Recent reports</h2></div><Link className="text-link" to="/app/reports">All reports <ArrowUpRight size={15} /></Link></div>
