@@ -136,3 +136,23 @@ All task routes require the existing HttpOnly session. Worker routes are restric
 | POST | `/tasks/admin/:id/return` | Return submitted work to the assigned worker with a reason of at least eight characters |
 
 Workers are provisioned by an administrator promoting an existing account using the existing `PATCH /users/:id/role` endpoint. Public registration cannot create worker or admin roles.
+
+## Notifications (Phase 9)
+
+All notification endpoints require the current HttpOnly session. Records are persisted per recipient, use an idempotent event key, and can only be listed or marked read by that recipient. The UI refreshes the feed every 30 seconds and on browser focus; push/WebSocket delivery is not configured.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/notifications?limit=20&page=1` | Latest recipient-owned notifications and unread count; limit is capped at 50. |
+| PATCH | `/notifications/:id/read` | Mark one owned notification read. Non-owned or missing IDs return 404. |
+| PATCH | `/notifications/read-all` | Mark all of the caller's notifications read. |
+
+Elevated worker/admin signup requests and report creation notify active administrators; report moderation and task verification notify the reporting citizen; assignment/reassignment notifies the affected worker; worker submission for verification notifies administrators. Notification persistence is best effort and cannot undo the primary account/report/task action.
+
+## Analytics and civic assistant (Phases 10–11)
+
+`GET /reports/admin/metrics` is admin-only and returns observed database totals plus status/category/zone aggregates, average resolution duration when available, and daily submission counts. When no dates are selected, the daily chart is limited to the last 30 days while headline totals retain their selected/all-time scope. Hotspot grouping is approximate and is not a verified prevalence measure.
+
+`GET /reports/admin/insights` is admin-only and asks Groq for optional advisory recommendations. Only filtered aggregate counts by status, category, and zone, plus the date labels, are sent; report text, images, and user identities are excluded. The source counts are returned alongside the generated text. AI insights are unavailable without `GROQ_API_KEY`; conventional metrics still work.
+
+`POST /assistant/chat` requires an authenticated session and is rate limited to 30 requests per 15 minutes. Body: `{ "messages": [{ "role": "user", "content": "..." }] }`; at most eight messages of up to 1000 characters each are accepted. Ordinary assistant messages are sent to Groq to answer sanitation questions, draft complaint text, and explain app navigation. It never submits a complaint. When a citizen asks for report status, the API uses a direct query filtered by the authenticated reporter ID; report details are not sent to Groq. Do not include secrets or sensitive personal information in chat. The assistant requires `GROQ_API_KEY` and fails with a clear temporary-unavailable response if Groq is not configured or unreachable.

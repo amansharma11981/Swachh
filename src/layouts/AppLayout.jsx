@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/ui/Icons.jsx'
 import { useAuth } from '../features/auth/AuthProvider.jsx'
+import NotificationBell from '../components/layout/NotificationBell.jsx'
+import '../features/assistant/assistant.css'
 
 const navByArea = {
-  app: [['app', 'Overview', 'activity'], ['app/report', 'Report an issue', 'camera'], ['app/reports', 'My reports', 'route'], ['app/map', 'Cleanliness map', 'map'], ['app/profile', 'Profile', 'users']],
-  worker: [['worker', 'Overview', 'activity'], ['worker/tasks', 'Assigned tasks', 'check'], ['worker/map', 'Team map', 'map'], ['worker/profile', 'Profile', 'users']],
-  admin: [['admin', 'Overview', 'activity'], ['admin/reports', 'Reports', 'route'], ['admin/access-requests', 'Access requests', 'users'], ['admin/map', 'Operations map', 'map'], ['admin/workers', 'Workers', 'users'], ['admin/zones', 'Pilot zones', 'mapPin'], ['admin/bins', 'Smart bins', 'recycle'], ['admin/analytics', 'Analytics', 'chart'], ['admin/settings', 'Settings', 'activity']],
+  app: [['app', 'Overview', 'activity'], ['app/report', 'Report an issue', 'camera'], ['app/reports', 'My reports', 'route'], ['app/map', 'Cleanliness map', 'map'], ['app/assistant', 'Civic assistant', 'sparkles'], ['app/profile', 'Profile', 'users']],
+  worker: [['worker', 'Overview', 'activity'], ['worker/tasks', 'Assigned tasks', 'check'], ['worker/map', 'Team map', 'map'], ['worker/assistant', 'Civic assistant', 'sparkles'], ['worker/profile', 'Profile', 'users']],
+  admin: [['admin', 'Overview', 'activity'], ['admin/reports', 'Reports', 'route'], ['admin/access-requests', 'Access requests', 'users'], ['admin/map', 'Operations map', 'map'], ['admin/workers', 'Workers', 'users'], ['admin/zones', 'Pilot zones', 'mapPin'], ['admin/bins', 'Smart bins', 'recycle'], ['admin/analytics', 'Analytics', 'chart'], ['admin/assistant', 'Civic assistant', 'sparkles'], ['admin/settings', 'Settings', 'activity']],
 }
 const headings = { app: 'CITIZEN SPACE', worker: 'FIELD TEAM', admin: 'OPERATIONS' }
 
@@ -28,6 +30,6 @@ export default function AppLayout({ area }) {
 
   return <div className="workspace">
     <aside className="workspace-sidebar"><Link to="/" className="wordmark"><span className="brand-mark">S</span><span>swachh<span className="wordmark-ai">AI</span><small>{headings[area]}</small></span></Link><div className="workspace-label">WORKSPACE NAVIGATION</div><nav aria-label={`${headings[area]} navigation`}>{navByArea[area].map(([path, label, icon]) => <NavLink end={path === area} key={path} to={`/${path}`}><Icon name={icon} size={17} />{label}<Icon className="nav-arrow" name="arrowUpRight" size={14} /></NavLink>)}</nav><div className="workspace-sidebar-foot"><span className="preview-dot" />PHASE 2 · PREVIEW</div></aside>
-    <div className="workspace-main"><header className="workspace-topbar"><span>SWACHHAI <b>/</b> {headings[area]} <span className="workspace-user">· {user?.name}</span></span><div className="workspace-account">{logoutError && <span role="alert">{logoutError}</span>}<button type="button" onClick={handleLogout}>Sign out <Icon name="arrowUpRight" size={14} /></button><Link to="/" aria-label="Back to public homepage">Public site <Icon name="arrowUpRight" size={14} /></Link></div></header><main id="main-content" className="workspace-content"><Outlet /></main></div>
+    <div className="workspace-main"><header className="workspace-topbar"><span>SWACHHAI <b>/</b> {headings[area]} <span className="workspace-user">· {user?.name}</span></span><div className="workspace-account">{logoutError && <span role="alert">{logoutError}</span>}<NotificationBell /><button type="button" onClick={handleLogout}>Sign out <Icon name="arrowUpRight" size={14} /></button><Link to="/" aria-label="Back to public homepage">Public site <Icon name="arrowUpRight" size={14} /></Link></div></header><main id="main-content" className="workspace-content"><Outlet /></main></div>
   </div>
 }

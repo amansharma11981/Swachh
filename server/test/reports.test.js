@@ -20,6 +20,7 @@ const workerId = new mongoose.Types.ObjectId().toString()
 class TestUser {
   static records = new Map()
   static async findSafeById(id) { return this.records.get(String(id)) || null }
+  static find(filter) { const rows = [...this.records.values()].filter((user) => matches(user, filter)); return { select() { return this }, lean: async () => rows.map((user) => ({ _id: user._id })) } }
 }
 TestUser.records = new Map([
   [citizenId, { _id: citizenId, id: citizenId, name: 'Citizen One', role: 'citizen', isActive: true }],
@@ -69,6 +70,7 @@ class TestAudit {
   static async create(values) { const event = { ...values, _id: new mongoose.Types.ObjectId().toString(), createdAt: new Date() }; this.records.push(event); return event }
   static find() { const query = { sort() { return this }, limit() { return this }, lean: async () => this.records }; return query }
 }
+class TestNotification { static async updateOne() { return { upsertedCount: 1 } } }
 
 class TestReport {
   static records = []
@@ -104,7 +106,7 @@ function freshApp({ storageEnabled = true, maxFileSizeBytes = config.maxImageSiz
     async remove(assetId) { removed.push(assetId) },
   }
   const app = createApp({
-    config: { ...config, maxImageSizeBytes: maxFileSizeBytes }, UserModel: TestUser, ReportModel: TestReport, CounterModel: TestCounter, ZoneModel: TestZone, AuditModel: TestAudit,
+    config: { ...config, maxImageSizeBytes: maxFileSizeBytes }, UserModel: TestUser, ReportModel: TestReport, CounterModel: TestCounter, ZoneModel: TestZone, AuditModel: TestAudit, NotificationModel: TestNotification,
     imageStorage, getDatabaseStatus: () => 'connected', ...(aiAnalysisService ? { aiAnalysisService } : {}),
   })
   return { app, imageStorage, removed }

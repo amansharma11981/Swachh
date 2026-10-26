@@ -77,7 +77,7 @@ function createdAtRange(from, to) {
   return range
 }
 
-export function reportController({ ReportModel, CounterModel, ZoneModel, imageStorage, AuditModel, aiAnalysis, config }) {
+export function reportController({ ReportModel, CounterModel, ZoneModel, imageStorage, AuditModel, aiAnalysis, notifications, UserModel, config }) {
   return {
     create: async (request, response) => {
       if (!imageStorage.enabled) throw new AppError(503, 'IMAGE_STORAGE_NOT_CONFIGURED', 'Image storage is not configured. Contact the project administrator.')
@@ -112,6 +112,7 @@ export function reportController({ ReportModel, CounterModel, ZoneModel, imageSt
           images: [uploadedImage], status: 'submitted', priority: initialPriority,
           statusHistory: [{ fromStatus: null, toStatus: 'submitted', actor: request.user.id, timestamp: new Date(), note: aiPriorityApplies ? 'Initial priority set from image review and recent zone reports; administrator review may change it.' : 'Report submitted by citizen' }],
         })
+        await notifications?.notifyAdmins({ eventKey: `report:${report._id}:created`, type: 'report_created', title: 'New citizen report', message: `${report.reportNumber} was submitted for review.`, href: '/admin/reports' })
         response.status(201).json({ success: true, data: { report: serializeReport(report) } })
       } catch (error) {
         try { await imageStorage.remove(uploadedImage.assetId) } catch { /* Provider cleanup is best effort; do not hide the database failure. */ }
@@ -169,17 +170,36 @@ export function reportController({ ReportModel, CounterModel, ZoneModel, imageSt
       const filters = parseAdminFilters({ ...request.query, limit: 1 })
       const filter = { ...(filters.zoneId ? { 'zone.zoneId': filters.zoneId } : {}), ...(filters.status ? { status: statusFilter(filters.status) } : {}), ...(filters.category ? { category: filters.category } : {}), ...(filters.priority ? { priority: filters.priority } : {}) }
       if (filters.from || filters.to) filter.createdAt = createdAtRange(filters.from, filters.to)
-      const [total, byStatus, byCategory, byZone, priorities, resolvedRows] = await Promise.all([
+      const defaultSeriesStart = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000)
+      const seriesFilter = { ...filter, createdAt: filters.from || filters.to ? createdAtRange(filters.from, filters.to) : { $gte: defaultSeriesStart } }
+      const [total, byStatus, byCategory, byZone, priorities, resolvedRows, dailySubmissions] = await Promise.all([
         ReportModel.countDocuments(filter),
         ReportModel.aggregate([{ $match: filter }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
         ReportModel.aggregate([{ $match: filter }, { $group: { _id: '$category', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
         ReportModel.aggregate([{ $match: filter }, { $group: { _id: { $ifNull: ['$zone.name', 'Unspecified'] }, count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
         ReportModel.countDocuments({ ...filter, priority: { $in: ['high', 'urgent'] }, status: { ...(filter.status ? (typeof filter.status === 'object' ? filter.status : { $in: [filter.status] }) : {}), $nin: ['resolved', 'rejected', 'duplicate'] } }),
         ReportModel.aggregate([{ $match: { ...filter, resolvedAt: { $type: 'date' }, createdAt: { ...(filter.createdAt || {}), $type: 'date' } } }, { $project: { duration: { $subtract: ['$resolvedAt', '$createdAt'] } } }, { $group: { _id: null, averageMs: { $avg: '$duration' }, count: { $sum: 1 } } }]),
+        ReportModel.aggregate([{ $match: seriesFilter }, { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' } }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }, { $limit: 366 }]),
       ])
       const status = Object.fromEntries(byStatus.map(({ _id, count }) => [_id, count]))
       const avg = resolvedRows[0]?.count >= 1 ? resolvedRows[0].averageMs : null
-      response.json({ success: true, data: { total, pending: (status.submitted || 0) + (status.under_review || 0), inProgress: ['assigned', 'in_progress', 'submitted_for_verification', 'reopened'].reduce((sum, key) => sum + (status[key] || 0), 0), resolved: status.resolved || 0, awaitingReview: status.under_review || 0, highPriorityOpen: priorities, averageResolutionMs: avg, byStatus, byCategory, byZone } })
+      response.json({ success: true, data: { total, pending: (status.submitted || 0) + (status.under_review || 0), inProgress: ['assigned', 'in_progress', 'submitted_for_verification', 'reopened'].reduce((sum, key) => sum + (status[key] || 0), 0), resolved: status.resolved || 0, awaitingReview: status.under_review || 0, highPriorityOpen: priorities, averageResolutionMs: avg, byStatus, byCategory, byZone, dailySubmissions, dailyWindow: filters.from || filters.to ? 'selected date range' : 'last 30 days' } })
+    },
+
+    adminInsights: async (request, response) => {
+      if (!aiAnalysis?.configured || !aiAnalysis.insights) throw new AppError(503, 'AI_NOT_CONFIGURED', 'AI insights are not configured. Aggregate analytics are still available.')
+      const filters = parseAdminFilters({ ...request.query, limit: 1 })
+      const filter = { ...(filters.zoneId ? { 'zone.zoneId': filters.zoneId } : {}), ...(filters.status ? { status: statusFilter(filters.status) } : {}), ...(filters.category ? { category: filters.category } : {}), ...(filters.priority ? { priority: filters.priority } : {}) }
+      if (filters.from || filters.to) filter.createdAt = createdAtRange(filters.from, filters.to)
+      const [total, byStatus, byCategory, byZone] = await Promise.all([
+        ReportModel.countDocuments(filter),
+        ReportModel.aggregate([{ $match: filter }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
+        ReportModel.aggregate([{ $match: filter }, { $group: { _id: '$category', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 8 }]),
+        ReportModel.aggregate([{ $match: filter }, { $group: { _id: { $ifNull: ['$zone.name', 'Unspecified'] }, count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 8 }]),
+      ])
+      const result = await aiAnalysis.insights({ total, byStatus, byCategory, byZone, period: { from: filters.from || null, to: filters.to || null }, note: 'Counts are from this application database only.' })
+      if (result.status !== 'completed') throw new AppError(503, 'AI_UNAVAILABLE', 'AI insights are temporarily unavailable. The stored analytics remain available.')
+      response.json({ success: true, data: { insights: result.content, basedOn: { total, byStatus, byCategory, byZone } } })
     },
 
     hotspots: async (request, response) => {
@@ -216,6 +236,7 @@ export function reportController({ ReportModel, CounterModel, ZoneModel, imageSt
       if (Object.keys(changes).length) {
         await report.save()
         await AuditModel?.create({ actor: request.user.id, action: 'report_moderated', targetType: 'Report', targetId: report._id, changes })
+        await notifications?.notify(report.reporter, { eventKey: `report:${report._id}:moderated:${report.updatedAt?.getTime?.() || Date.now()}`, type: 'report_update', title: 'Your report was updated', message: `${report.reportNumber} was updated by the review team.`, href: `/app/reports/${report._id}` })
       }
       response.json({ success: true, data: { report: serializeReport(report, { admin: true }) } })
     },

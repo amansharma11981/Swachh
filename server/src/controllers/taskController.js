@@ -18,7 +18,7 @@ async function pagedReports(Model, filter, page, limit, admin = false) {
   return { items: items.map((item) => serializeReport(item, { admin })), pagination: { page, limit, total, pages: Math.ceil(total / limit) } }
 }
 
-export function taskController({ ReportModel, UserModel, imageStorage, AuditModel }) {
+export function taskController({ ReportModel, UserModel, imageStorage, AuditModel, notifications }) {
   return {
     workerDashboard: async (request, response) => {
       const worker = request.user.id
@@ -88,6 +88,7 @@ export function taskController({ ReportModel, UserModel, imageStorage, AuditMode
       assertWorkerOwnsTask(report, request.user.id)
       const updated = await submitTaskForVerification({ report, workerId: request.user.id })
       await AuditModel?.create({ actor: request.user.id, action: 'task_status_changed', targetType: 'Report', targetId: updated._id, changes: { status: updated.status } })
+      await notifications?.notifyAdmins({ eventKey: `report:${updated._id}:submitted-for-verification:${updated.updatedAt?.getTime?.() || Date.now()}`, type: 'task_submitted', title: 'Work ready for verification', message: `${updated.reportNumber} was submitted by its worker.`, href: '/admin/reports' })
       response.json({ success: true, data: { report: serializeReport(updated) } })
     },
 
@@ -115,9 +116,12 @@ export function taskController({ ReportModel, UserModel, imageStorage, AuditMode
       if (!mongoose.isValidObjectId(request.params.id)) throw notFound()
       const report = await ReportModel.findById(request.params.id)
       if (!report) throw notFound()
+      const previousWorkerId = report.assignedWorker ? String(report.assignedWorker) : null
       const worker = await UserModel.findSafeById(request.validatedBody.workerId)
       const updated = await assignReport({ report, worker, adminId: request.user.id, ...request.validatedBody, dueAt: request.validatedBody.dueAt ? new Date(request.validatedBody.dueAt) : null })
       await AuditModel?.create({ actor: request.user.id, action: 'task_assigned', targetType: 'Report', targetId: updated._id, changes: { assignedWorker: String(worker._id || worker.id), priority: updated.priority } })
+      await notifications?.notify(worker._id || worker.id, { eventKey: `report:${updated._id}:assigned:${updated.assignmentHistory?.at(-1)?.timestamp?.getTime?.() || Date.now()}`, type: 'task_assigned', title: 'A task was assigned to you', message: `${updated.reportNumber} is ready in your task list.`, href: '/worker/tasks' })
+      if (previousWorkerId && previousWorkerId !== String(worker._id || worker.id)) await notifications?.notify(previousWorkerId, { eventKey: `report:${updated._id}:reassigned:${updated.assignmentHistory?.at(-1)?.timestamp?.getTime?.() || Date.now()}`, type: 'task_assigned', title: 'A task was reassigned', message: `${updated.reportNumber} was moved to another worker.`, href: '/worker/tasks' })
       response.json({ success: true, data: { report: serializeReport(updated) } })
     },
 
@@ -143,6 +147,7 @@ export function taskController({ ReportModel, UserModel, imageStorage, AuditMode
       if (!report) throw notFound()
       const updated = await verifyTask({ report, adminId: request.user.id, approved: request.taskApproval === true, reason: request.validatedBody.reason })
       await AuditModel?.create({ actor: request.user.id, action: request.taskApproval ? 'task_verified' : 'task_returned', targetType: 'Report', targetId: updated._id, changes: { status: updated.status, reasonLength: request.validatedBody.reason.length } })
+      await notifications?.notify(updated.reporter, { eventKey: `report:${updated._id}:verification:${updated.updatedAt?.getTime?.() || Date.now()}`, type: 'task_verified', title: request.taskApproval ? 'Work completed' : 'Work needs another review', message: `${updated.reportNumber} status is now ${updated.status.replaceAll('_', ' ')}.`, href: `/app/reports/${updated._id}` })
       response.json({ success: true, data: { report: serializeReport(updated) } })
     },
   }

@@ -17,11 +17,12 @@ const AdminTaskPage = lazy(() => import('../pages/AdminTaskPage.jsx'))
 const AdminAccessRequestsPage = lazy(() => import('../pages/AdminAccessRequestsPage.jsx'))
 const AdminDashboardPage = lazy(() => import('../pages/AdminDashboardPage.jsx'))
 const ReportMapPage = lazy(() => import('../pages/ReportMapPage.jsx'))
+const AssistantPage = lazy(() => import('../pages/AssistantPage.jsx'))
 
 function titleFor(path) {
   const clean = path.split('/').filter(Boolean)
   const name = clean.at(-1) || 'Overview'
-  const labels = { app: 'Citizen dashboard', worker: 'Worker workspace', admin: 'Operations overview', report: 'Report an issue', reports: 'Reports', 'access-requests': 'Access requests', map: 'Cleanliness map', profile: 'Profile', tasks: 'Assigned tasks', bins: 'Smart-bin readiness', analytics: 'Operational analytics', zones: 'Pilot zones', settings: 'Settings', login: 'Sign in', register: 'Create account', impact: 'Impact & methodology', privacy: 'Privacy', accessibility: 'Accessibility', 'how-it-works': 'How it works' }
+  const labels = { app: 'Citizen dashboard', worker: 'Worker workspace', admin: 'Operations overview', report: 'Report an issue', reports: 'Reports', 'access-requests': 'Access requests', map: 'Cleanliness map', profile: 'Profile', tasks: 'Assigned tasks', bins: 'Smart-bin readiness', analytics: 'Operational analytics', zones: 'Pilot zones', settings: 'Settings', assistant: 'Civic assistant', login: 'Sign in', register: 'Create account', impact: 'Impact & methodology', privacy: 'Privacy', accessibility: 'Accessibility', 'how-it-works': 'How it works' }
   return labels[name] || (name[0]?.toUpperCase() + name.slice(1))
 }
 
@@ -43,6 +44,7 @@ export default function App() {
       <Route path="tasks" element={area === 'worker' ? <WorkerDashboardPage /> : <PlaceholderPage title="Assigned tasks" area={area} />} />
       <Route path="tasks/:id" element={area === 'worker' ? <WorkerTaskPage /> : <PlaceholderPage title="Task detail" area={area} />} />
       <Route path="map" element={<ReportMapPage area={area} />} />
+      <Route path="assistant" element={<AssistantPage />} />
       <Route path="profile" element={<PlaceholderPage title="Profile" area={area} />} />
       <Route path="zones" element={<PlaceholderPage title="Pilot zones" area={area} />} />
       <Route path="workers" element={<PlaceholderPage title="Worker management" area={area} />} />

@@ -41,7 +41,7 @@ class TestUser {
   static async findSafeById(id) { return users.get(String(id)) || null }
   static find(filter) {
     const rows = [...users.values()].filter((user) => matches(user, filter))
-    const query = { offset: 0, count: 50, sort() { return this }, skip(n) { this.offset = n; return this }, limit(n) { this.count = n; return this }, lean() { return Promise.resolve(rows.slice(this.offset, this.offset + this.count).map(clone)) } }
+    const query = { offset: 0, count: 50, sort() { return this }, select() { return this }, skip(n) { this.offset = n; return this }, limit(n) { this.count = n; return this }, lean() { return Promise.resolve(rows.slice(this.offset, this.offset + this.count).map(clone)) } }
     return query
   }
   static async countDocuments(filter) { return [...users.values()].filter((user) => matches(user, filter)).length }
@@ -61,7 +61,7 @@ class TestReport {
   }
   static find(filter) {
     const rows = this.records.filter((record) => matches(record, filter))
-    const query = { offset: 0, count: 50, sort() { return this }, skip(n) { this.offset = n; return this }, limit(n) { this.count = n; return this }, lean: async () => rows.slice(this.offset, this.offset + this.count).map(clone) }
+    const query = { offset: 0, count: 50, sort() { return this }, select() { return this }, skip(n) { this.offset = n; return this }, limit(n) { this.count = n; return this }, lean: async () => rows.slice(this.offset, this.offset + this.count).map(clone) }
     return query
   }
   static async countDocuments(filter) { return this.records.filter((record) => matches(record, filter)).length }
@@ -70,6 +70,7 @@ class TestAudit {
   static records = []
   static async create(values) { const event = { ...values, _id: new mongoose.Types.ObjectId().toString(), createdAt: new Date() }; this.records.push(event); return event }
 }
+class TestNotification { static async updateOne() { return { upsertedCount: 1 } } }
 
 function token(id) { return jwt.sign({}, config.jwtSecret, { subject: id, issuer: 'swachhai-api', audience: 'swachhai-web', expiresIn: '2h' }) }
 function auth(call, id) { return call.set('Origin', origin).set('Cookie', `${config.cookieName}=${token(id)}`) }
@@ -80,7 +81,7 @@ function freshApp() {
     async upload(buffer, { contentType }) { return { provider: 'cloudinary', assetId: `completion/${buffer.length}`, secureUrl: 'https://images.example.test/completion.webp', contentType, size: buffer.length, uploadedAt: new Date() } },
     async remove() {},
   }
-  const app = createApp({ config, UserModel: TestUser, ReportModel: TestReport, AuditModel: TestAudit, imageStorage: storage, getDatabaseStatus: () => 'connected' })
+  const app = createApp({ config, UserModel: TestUser, ReportModel: TestReport, AuditModel: TestAudit, NotificationModel: TestNotification, imageStorage: storage, getDatabaseStatus: () => 'connected' })
   return { app, storage }
 }
 async function report(values = {}) {

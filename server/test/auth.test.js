@@ -27,7 +27,7 @@ TestUser.findByEmail = async (email) => [...TestUser.records.values()].find((use
 TestUser.findSafeById = async (id) => TestUser.records.get(String(id)) || null
 TestUser.countDocuments = async (query) => [...TestUser.records.values()].filter((user) => Object.entries(query).every(([key, value]) => user[key] === value)).length
 TestUser.find = (query = {}) => ({
-  sort() { return this }, limit() { return this },
+  sort() { return this }, limit() { return this }, select() { return this },
   lean: async () => [...TestUser.records.values()].filter((user) => Object.entries(query).every(([key, value]) => (
     value && typeof value === 'object' && '$in' in value ? value.$in.includes(user[key]) : user[key] === value
   ))).map((user) => user.toObject()),

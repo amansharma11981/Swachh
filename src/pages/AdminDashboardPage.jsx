@@ -3,6 +3,7 @@ import { Activity, AlertTriangle, ArrowUpRight, CheckCircle2, Clock3, MapPinned,
 import { Link } from 'react-router-dom'
 import { reportService, reportCategoryLabel, REPORT_CATEGORIES } from '../features/reports/reportService.js'
 import '../features/tasks/tasks.css'
+import '../features/reports/analytics.css'
 
 const metricsCards = [
   ['total', 'All reports', Activity], ['pending', 'Pending review', Clock3], ['inProgress', 'In progress', RefreshCw], ['resolved', 'Resolved', CheckCircle2], ['awaitingReview', 'Needs review', ShieldAlert], ['highPriorityOpen', 'High priority open', AlertTriangle],
@@ -10,12 +11,15 @@ const metricsCards = [
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('')
+  const [insights, setInsights] = useState(''); const [insightError, setInsightError] = useState(''); const [insightLoading, setInsightLoading] = useState(false)
   const [audit, setAudit] = useState([])
   const [filters, setFilters] = useState({ from: '', to: '', status: '', category: '', priority: '', zoneId: '' }); const [zones, setZones] = useState([])
   const setFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }))
   useEffect(() => { let active = true; setLoading(true); setError(''); reportService.getAdminMetrics(filters).then((value) => { if (active) setData(value) }).catch((e) => { if (active) setError(e.message || 'Could not load admin metrics.') }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [filters])
   useEffect(() => { let active = true; reportService.getZones().then((result) => { if (active) setZones(result.zones || []) }).catch(() => {}); return () => { active = false } }, [])
   const maxCategory = Math.max(1, ...(data?.byCategory || []).map((item) => item.count))
+  const maxDaily = Math.max(1, ...(data?.dailySubmissions || []).map((item) => item.count))
+  const generateInsights = async () => { setInsightLoading(true); setInsightError(''); setInsights(''); try { const result = await reportService.getAdminInsights(filters); setInsights(result.insights) } catch (e) { setInsightError(e.message || 'Could not generate insights.') } finally { setInsightLoading(false) } }
   useEffect(() => { let active = true; reportService.getRecentAudit().then((result) => { if (active) setAudit(result.events || []) }).catch(() => { if (active) setAudit([]) }); return () => { active = false } }, [])
   return <section className="tasks-page admin-overview">
     <div className="eyebrow"><span className="eyebrow-line" />OPERATIONS / OVERVIEW</div>
@@ -24,9 +28,11 @@ export default function AdminDashboardPage() {
     {error && <div className="task-alert" role="alert">{error}</div>}
     {loading ? <div className="report-loading" role="status">Loading database metrics…</div> : data && <>
       <div className="admin-metric-grid">{metricsCards.map(([key, label, Icon]) => <article className="task-stat" key={key}><span><Icon size={17} /></span><div><small>{label}</small><strong>{data[key] ?? 0}</strong></div></article>)}</div>
+      <section className="admin-analytics-panel admin-daily-panel"><div className="section-title-row"><div><span className="demo-label">RECORDED SUBMISSIONS · {data.dailyWindow}</span><h2>Daily report volume</h2></div></div>{data.dailySubmissions?.length ? <ul className="admin-bar-list admin-daily-bars">{data.dailySubmissions.map(({ _id, count }) => <li key={_id}><div><span>{new Date(`${_id}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span><strong>{count}</strong></div><span className="admin-bar-track"><i style={{ width: `${Math.max(3, count / maxDaily * 100)}%` }} /></span></li>)}</ul> : <p>No reports were submitted in this window.</p>}</section>
       <div className="admin-analytics-grid"><section className="admin-analytics-panel"><div className="section-title-row"><div><span className="demo-label">OBSERVED RECORDS</span><h2>Reports by category</h2></div></div>{data.byCategory?.length ? <ul className="admin-bar-list">{data.byCategory.map(({ _id, count }) => <li key={_id}><div><span>{reportCategoryLabel(_id)}</span><strong>{count}</strong></div><span className="admin-bar-track"><i style={{ width: `${Math.max(3, count / maxCategory * 100)}%` }} /></span></li>)}</ul> : <p>No reports match this period.</p>}</section>
       <section className="admin-analytics-panel"><div className="section-title-row"><div><span className="demo-label">PILOT LABELS</span><h2>Reports by zone</h2></div></div>{data.byZone?.length ? <ul className="admin-zone-list">{data.byZone.map(({ _id, count }) => <li key={_id}><span>{_id}</span><strong>{count}</strong></li>)}</ul> : <p>No zone reports in this period.</p>}<p className="admin-method-note">Average resolution: {data.averageResolutionMs == null ? 'insufficient resolved timestamps' : `${Math.round(data.averageResolutionMs / 3600000)} hours`}.</p><p className="admin-method-note">Counts reflect reports in the selected submission date range. They are not an estimate of total waste.</p></section></div>
       <section className="admin-analytics-panel admin-audit-overview"><div className="section-title-row"><div><span className="demo-label">APPEND-ONLY EVENT RECORDS</span><h2>Recent administrative activity</h2></div></div>{audit.length ? <ul className="admin-zone-list">{audit.slice(0, 8).map((event) => <li key={event._id}><span><strong>{event.action?.replaceAll('_', ' ')}</strong> · {event.targetType} {String(event.targetId).slice(-7)}<small>{event.createdAt ? new Date(event.createdAt).toLocaleString() : 'Time unavailable'}</small></span><code>{JSON.stringify(event.changes || {})}</code></li>)}</ul> : <p>No administrative audit events are recorded yet.</p>}</section>
+      <section className="admin-analytics-panel admin-insights-panel"><div className="section-title-row"><div><span className="demo-label">AGGREGATE DATA ONLY</span><h2>AI operations notes</h2></div><button className="button button-secondary" type="button" disabled={insightLoading} onClick={generateInsights}>{insightLoading ? 'Generating…' : 'Generate insights'}</button></div><p className="admin-method-note">Groq receives filtered counts by status, category, and zone. Report descriptions, images, and user identities are excluded. Suggestions are advisory.</p>{insightError && <p className="task-alert" role="alert">{insightError}</p>}{insights && <p className="admin-ai-insight" aria-live="polite">{insights}</p>}</section>
     </>}
   </section>
 }

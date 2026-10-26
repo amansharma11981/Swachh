@@ -10,7 +10,7 @@ React routes + AuthProvider
   -> Express: Helmet, CORS, origin guard, rate limits, role checks
   -> Zod validators + Multer memory upload + file signature checks
   -> auth/report controllers and services
-  -> Mongoose User, Report, ReportCounter, Zone models -> MongoDB
+  -> Mongoose User, Report, ReportCounter, Zone, Notification models -> MongoDB
   -> image-storage adapter -> Cloudinary when configured
 ```
 
@@ -29,3 +29,9 @@ Locations can be manually described with or without a coordinate pair. When pres
 The server signs a two-hour default JWT with issuer and audience claims, then sets it as an HttpOnly cookie restricted to `/api/v1`. SameSite defaults to `lax`; production requires Secure. Mutating endpoints require an exact configured Origin. Configure same-site frontend/API hosts or use HTTPS and `COOKIE_SAME_SITE=none` for cross-site deployments.
 
 Logout expires the browser cookie. There is no token denylist, so a copied JWT remains usable until expiry. Keep the lifetime short and treat server-side revocation as future work if the deployment threat model requires immediate logout.
+
+## Notifications, analytics, and assistant
+
+Notifications are stored per user, with a unique `(recipient, eventKey)` index to prevent duplicate event delivery. A failed notification write is logged without failing the primary business action. Clients poll the authenticated feed every 30 seconds and when focus returns; no third-party push provider is used.
+
+Admin analytics are MongoDB aggregates over actual reports. AI analytics recommendations receive aggregate counts only. The civic assistant sends ordinary chat text to Groq only after the user submits a message. Report-status questions are answered from an ownership-filtered database query and stay out of the model request. Chat state is held in the browser only for the active page and is not persisted.

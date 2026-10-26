@@ -1,9 +1,10 @@
 import { sessionCookieOptions, clearSessionCookie } from '../utils/cookies.js'
 
-export function authController({ authService, config }) {
+export function authController({ authService, config, notifications }) {
   return {
     register: async (request, response) => {
       const result = await authService.register(request.validatedBody)
+      if (result.approvalRequired) await notifications?.notifyAdmins({ eventKey: `access:${result.user.id}:requested`, type: 'access_request', title: 'New access request', message: `A ${result.user.requestedRole} account is waiting for review.`, href: '/admin/access-requests' })
       if (result.sessionToken) response.cookie(config.cookieName, result.sessionToken, sessionCookieOptions(config))
       response.status(result.approvalRequired ? 202 : 201).json({ success: true, data: { user: result.user, approvalRequired: result.approvalRequired } })
     },

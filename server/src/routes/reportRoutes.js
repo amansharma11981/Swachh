@@ -14,6 +14,7 @@ export function reportRoutes({ controller, authenticate, config }) {
   router.get('/meta/zones', authenticate, authorizeRole('citizen', 'worker', 'admin'), controller.listZones)
   router.get('/map', authenticate, authorizeRole('citizen', 'worker', 'admin'), controller.mapReports)
   router.get('/admin/metrics', authenticate, authorizeRole('admin'), controller.adminMetrics)
+  router.get('/admin/insights', authenticate, authorizeRole('admin'), controller.adminInsights)
   router.get('/admin/audit', authenticate, authorizeRole('admin'), controller.recentAudit)
   router.get('/admin/hotspots', authenticate, authorizeRole('admin'), controller.hotspots)
   router.get('/admin/:id/audit', authenticate, authorizeRole('admin'), controller.auditHistory)

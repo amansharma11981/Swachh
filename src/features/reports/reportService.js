@@ -12,6 +12,7 @@ export const reportService = {
   getReport: (id) => apiRequest(`/reports/${encodeURIComponent(id)}`),
   getZones: () => apiRequest('/reports/meta/zones'),
   getAdminMetrics: (filters = {}) => apiRequest(`/reports/admin/metrics?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
+  getAdminInsights: (filters = {}) => apiRequest(`/reports/admin/insights?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
   getAdminReports: (filters = {}) => apiRequest(`/reports?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
   getRecentAudit: () => apiRequest('/reports/admin/audit'),
   getMapReports: (filters = {}) => apiRequest(`/reports/map?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),

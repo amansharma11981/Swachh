@@ -3,6 +3,7 @@ import { loadConfig } from './config/env.js'
 import { connectDb, disconnectDb } from './config/db.js'
 import { User } from './models/User.js'
 import { Report, ReportCounter } from './models/Report.js'
+import { Notification } from './models/Notification.js'
 import { Zone, seedConfiguredZones } from './models/Zone.js'
 import { createApp } from './app.js'
 import { logger } from './utils/logger.js'
@@ -11,7 +12,7 @@ async function start() {
   const config = loadConfig()
   await connectDb(config.mongoUri)
   await User.init()
-  await Promise.all([Report.init(), ReportCounter.init(), Zone.init()])
+  await Promise.all([Report.init(), ReportCounter.init(), Zone.init(), Notification.init()])
   await seedConfiguredZones(Zone, config.reportZones)
   const server = http.createServer(createApp({ config }))
   server.listen(config.port, () => logger.info('server_listening', { port: config.port, environment: config.nodeEnv }))
