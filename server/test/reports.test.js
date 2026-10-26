@@ -15,6 +15,7 @@ const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR
 const citizenId = new mongoose.Types.ObjectId().toString()
 const secondCitizenId = new mongoose.Types.ObjectId().toString()
 const adminId = new mongoose.Types.ObjectId().toString()
+const workerId = new mongoose.Types.ObjectId().toString()
 
 class TestUser {
   static records = new Map()
@@ -24,6 +25,7 @@ TestUser.records = new Map([
   [citizenId, { _id: citizenId, id: citizenId, name: 'Citizen One', role: 'citizen', isActive: true }],
   [secondCitizenId, { _id: secondCitizenId, id: secondCitizenId, name: 'Citizen Two', role: 'citizen', isActive: true }],
   [adminId, { _id: adminId, id: adminId, name: 'Admin', role: 'admin', isActive: true }],
+  [workerId, { _id: workerId, id: workerId, name: 'Worker', role: 'worker', isActive: true }],
 ])
 
 const plain = (value) => {
@@ -32,9 +34,22 @@ const plain = (value) => {
   delete clone.save
   return structuredClone(clone)
 }
-const matches = (record, filter) => Object.entries(filter).every(([key, expected]) => expected && typeof expected === 'object' && '$in' in expected
-  ? expected.$in.includes(record[key])
-  : record[key] === expected)
+const getPath = (record, path) => path.split('.').reduce((value, key) => value?.[key], record)
+const matches = (record, filter) => Object.entries(filter).every(([key, expected]) => {
+  if (key === '$or') return expected.some((branch) => matches(record, branch))
+  const actual = getPath(record, key)
+  if (expected instanceof RegExp) return expected.test(String(actual || ''))
+  if (expected && typeof expected === 'object') {
+    if ('$exists' in expected) return (actual !== undefined) === expected.$exists
+    if ('$in' in expected && !expected.$in.includes(actual)) return false
+    if ('$ne' in expected && String(actual) === String(expected.$ne)) return false
+    if ('$nin' in expected && expected.$nin.includes(actual)) return false
+    if ('$gte' in expected && !(new Date(actual) >= new Date(expected.$gte))) return false
+    if ('$lte' in expected && !(new Date(actual) <= new Date(expected.$lte))) return false
+    return true
+  }
+  return String(actual ?? '') === String(expected ?? '')
+})
 
 class TestZone {
   static records = [
@@ -49,6 +64,12 @@ class TestCounter {
   static async findOneAndUpdate() { return { sequence: ++this.sequence } }
 }
 
+class TestAudit {
+  static records = []
+  static async create(values) { const event = { ...values, _id: new mongoose.Types.ObjectId().toString(), createdAt: new Date() }; this.records.push(event); return event }
+  static find() { const query = { sort() { return this }, limit() { return this }, lean: async () => this.records }; return query }
+}
+
 class TestReport {
   static records = []
   static failCreate = false
@@ -60,13 +81,13 @@ class TestReport {
     return report
   }
   static find(filter) {
-    const query = { offset: 0, count: Number.POSITIVE_INFINITY, sort() { return this }, skip(value) { this.offset = value; return this }, limit(value) { this.count = value; return this }, lean: async () => this.records.filter((record) => matches(record, filter)).sort((a, b) => b.createdAt - a.createdAt).slice(query.offset, query.offset + query.count).map(plain) }
+    const query = { offset: 0, count: Number.POSITIVE_INFINITY, sort() { return this }, select() { return this }, skip(value) { this.offset = value; return this }, limit(value) { this.count = value; return this }, lean: async () => this.records.filter((record) => matches(record, filter)).sort((a, b) => b.createdAt - a.createdAt).slice(query.offset, query.offset + query.count).map(plain) }
     return query
   }
   static async countDocuments(filter) { return this.records.filter((record) => matches(record, filter)).length }
   static findById(id) {
     const record = this.records.find((item) => String(item._id) === String(id)) || null
-    return { lean: async () => plain(record), then(resolve, reject) { return Promise.resolve(record).then(resolve, reject) } }
+    return { select() { return this }, lean: async () => plain(record), then(resolve, reject) { return Promise.resolve(record).then(resolve, reject) } }
   }
 }
 
@@ -74,8 +95,8 @@ function tokenFor(id, role) {
   return jwt.sign({ role }, config.jwtSecret, { subject: id, issuer: 'swachhai-api', audience: 'swachhai-web', expiresIn: '2h' })
 }
 
-function freshApp({ storageEnabled = true, maxFileSizeBytes = config.maxImageSizeBytes } = {}) {
-  TestReport.records = []; TestReport.failCreate = false; TestCounter.sequence = 0
+function freshApp({ storageEnabled = true, maxFileSizeBytes = config.maxImageSizeBytes, aiAnalysisService } = {}) {
+  TestReport.records = []; TestReport.failCreate = false; TestCounter.sequence = 0; TestAudit.records = []
   const removed = []
   const imageStorage = {
     enabled: storageEnabled,
@@ -83,8 +104,8 @@ function freshApp({ storageEnabled = true, maxFileSizeBytes = config.maxImageSiz
     async remove(assetId) { removed.push(assetId) },
   }
   const app = createApp({
-    config: { ...config, maxImageSizeBytes: maxFileSizeBytes }, UserModel: TestUser, ReportModel: TestReport, CounterModel: TestCounter, ZoneModel: TestZone,
-    imageStorage, getDatabaseStatus: () => 'connected',
+    config: { ...config, maxImageSizeBytes: maxFileSizeBytes }, UserModel: TestUser, ReportModel: TestReport, CounterModel: TestCounter, ZoneModel: TestZone, AuditModel: TestAudit,
+    imageStorage, getDatabaseStatus: () => 'connected', ...(aiAnalysisService ? { aiAnalysisService } : {}),
   })
   return { app, imageStorage, removed }
 }
@@ -92,6 +113,7 @@ function freshApp({ storageEnabled = true, maxFileSizeBytes = config.maxImageSiz
 function asCitizen(call, id = citizenId) {
   return call.set('Origin', origin).set('Cookie', `${config.cookieName}=${tokenFor(id, 'citizen')}`)
 }
+function asRole(call, id, role) { return call.set('Origin', origin).set('Cookie', `${config.cookieName}=${tokenFor(id, role)}`) }
 function submitReport(app, { id = citizenId, attach = true, fields = {} } = {}) {
   const call = asCitizen(request(app).post('/api/v1/reports'), id)
   if (attach) call.attach('image', png, { filename: 'issue.png', contentType: 'image/png' })
@@ -187,6 +209,60 @@ test('dashboard totals come from persisted records and only admins may list all 
   assert.equal(stats.body.data.recent.length, 2)
   const admin = request(app).get('/api/v1/reports').set('Cookie', `${config.cookieName}=${tokenFor(adminId, 'admin')}`)
   await admin.expect(200)
+})
+
+test('map endpoint returns only role-authorized reports and omits reporter identity', async () => {
+  const { app } = freshApp()
+  const first = await submitReport(app).expect(201)
+  await submitReport(app, { id: secondCitizenId }).expect(201)
+  const assigned = await TestReport.create({ reportNumber: 'SW-WORKER', reporter: secondCitizenId, assignedWorker: workerId, description: 'Waste is gathered near the service entrance.', category: 'general_garbage', location: { label: 'Service entry', source: 'manual', point: { type: 'Point', coordinates: [85.18, 25.63] } }, images: [], status: 'assigned', priority: 'normal' })
+  const citizenMap = await asCitizen(request(app).get('/api/v1/reports/map')).expect(200)
+  assert.equal(citizenMap.body.data.total, 1)
+  assert.equal(citizenMap.body.data.items[0].id, first.body.data.report.id)
+  assert.equal('reporter' in citizenMap.body.data.items[0], false)
+  const workerMap = await asRole(request(app).get('/api/v1/reports/map'), workerId, 'worker').expect(200)
+  assert.deepEqual(workerMap.body.data.items.map((item) => item.id), [String(assigned._id)])
+  const adminMap = await asRole(request(app).get('/api/v1/reports/map'), adminId, 'admin').expect(200)
+  assert.equal(adminMap.body.data.total, 3)
+})
+
+test('admin moderation validates workflow, persists corrections, hides internal notes from citizens, and audits changes', async () => {
+  const { app } = freshApp()
+  const created = await submitReport(app).expect(201)
+  const id = created.body.data.report.id
+  const payload = { category: 'public_area_litter', priority: 'high', status: 'under_review', note: 'Please confirm the exact affected area.' }
+  await asCitizen(request(app).patch(`/api/v1/reports/admin/${id}/moderate`).send(payload)).expect(403)
+  const reviewed = await asRole(request(app).patch(`/api/v1/reports/admin/${id}/moderate`).send(payload), adminId, 'admin').expect(200)
+  assert.equal(reviewed.body.data.report.category, 'public_area_litter')
+  assert.equal(reviewed.body.data.report.priority, 'high')
+  assert.equal(reviewed.body.data.report.status, 'under_review')
+  assert.equal(reviewed.body.data.report.moderationNotes.length, 1)
+  assert.equal(TestAudit.records[0].action, 'report_moderated')
+  const citizenDetail = await asCitizen(request(app).get(`/api/v1/reports/${id}`)).expect(200)
+  assert.equal('moderationNotes' in citizenDetail.body.data.report, false)
+  await asRole(request(app).patch(`/api/v1/reports/admin/${id}/moderate`).send({ status: 'resolved' }), adminId, 'admin').expect(409)
+})
+
+test('AI analysis is opt-in, signed to the image and description, and remains separate from approved report values', async () => {
+  const analysis = { provider: 'groq', model: 'qwen/qwen3.8-27b', status: 'completed', suggestedCategory: 'plastic_waste', suggestedPriority: 'high', summary: 'Loose plastic litter is visible beside the path.', priorityRationale: 'Several pieces are spread over a public walkway.', recommendedAction: 'Review the affected path and arrange collection.', confidence: null }
+  const aiAnalysisService = { configured: true, async analyze(input) { assert.equal(input.contentType, 'image/png'); assert.equal(input.description, 'Waste has gathered beside the public walkway.'); return analysis } }
+  const { app } = freshApp({ aiAnalysisService })
+  const result = await asCitizen(request(app).post('/api/v1/reports/analyze')).attach('image', png, { filename: 'issue.png', contentType: 'image/png' }).field('description', 'Waste has gathered beside the public walkway.').expect(200)
+  assert.equal(result.body.data.analysis.suggestedCategory, 'plastic_waste')
+  assert.equal(result.body.data.analysis.confidence, null)
+  const description = 'Waste has gathered beside the public walkway.'
+  const created = await submitReport(app, { fields: { description, analysisToken: result.body.data.analysisToken, category: 'other' } }).expect(201)
+  assert.equal(created.body.data.report.category, 'other')
+  assert.equal(created.body.data.report.priority, 'normal')
+  assert.equal(created.body.data.report.aiAnalysis.suggestedCategory, 'plastic_waste')
+  const stale = await submitReport(app, { fields: { description: 'A different description for the same image.', analysisToken: result.body.data.analysisToken } }).expect(201)
+  assert.equal('aiAnalysis' in stale.body.data.report, false)
+})
+
+test('missing AI configuration returns a manual-submission fallback', async () => {
+  const { app } = freshApp()
+  await asCitizen(request(app).post('/api/v1/reports/analyze')).attach('image', png, { filename: 'issue.png', contentType: 'image/png' }).field('description', 'Waste is present near this entrance.').expect(503)
+  await submitReport(app).expect(201)
 })
 
 test('status transition service records actor history and rejects citizen-style jumps', async () => {

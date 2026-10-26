@@ -34,6 +34,8 @@ export function loadConfig(env = process.env) {
     cloudName: env.CLOUDINARY_CLOUD_NAME?.trim(), apiKey: env.CLOUDINARY_API_KEY?.trim(), apiSecret: env.CLOUDINARY_API_SECRET?.trim(),
   }
   const cloudinaryConfigured = Object.values(cloudinarySettings).every(Boolean)
+  const groqApiKey = env.GROQ_API_KEY?.trim() || null
+  const groqVisionModel = env.GROQ_VISION_MODEL?.trim() || 'qwen/qwen3.8-27b'
   return Object.freeze({
     port: Number(env.PORT || 5000), nodeEnv, mongoUri, jwtSecret,
     jwtExpiresIn: expiresIn, cookieMaxAge: parseDuration(expiresIn),
@@ -44,5 +46,7 @@ export function loadConfig(env = process.env) {
     maxImageSizeBytes,
     reportZones,
     cloudinary: cloudinaryConfigured ? cloudinarySettings : null,
+    groqApiKey,
+    groqVisionModel,
   })
 }

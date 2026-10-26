@@ -10,15 +10,15 @@ function reportNumberSearch(query) {
   return new RegExp(`^${query.toUpperCase()}`)
 }
 
-async function pagedReports(Model, filter, page, limit) {
+async function pagedReports(Model, filter, page, limit, admin = false) {
   const [items, total] = await Promise.all([
     Model.find(filter).sort({ updatedAt: -1, _id: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     Model.countDocuments(filter),
   ])
-  return { items: items.map(serializeReport), pagination: { page, limit, total, pages: Math.ceil(total / limit) } }
+  return { items: items.map((item) => serializeReport(item, { admin })), pagination: { page, limit, total, pages: Math.ceil(total / limit) } }
 }
 
-export function taskController({ ReportModel, UserModel, imageStorage }) {
+export function taskController({ ReportModel, UserModel, imageStorage, AuditModel }) {
   return {
     workerDashboard: async (request, response) => {
       const worker = request.user.id
@@ -50,14 +50,18 @@ export function taskController({ ReportModel, UserModel, imageStorage }) {
       if (!mongoose.isValidObjectId(request.params.id)) throw notFound()
       const report = await ReportModel.findById(request.params.id)
       assertWorkerOwnsTask(report, request.user.id)
-      response.json({ success: true, data: { report: serializeReport(await acceptTask({ report, workerId: request.user.id })) } })
+      const updated = await acceptTask({ report, workerId: request.user.id })
+      await AuditModel?.create({ actor: request.user.id, action: 'task_status_changed', targetType: 'Report', targetId: updated._id, changes: { status: updated.status } })
+      response.json({ success: true, data: { report: serializeReport(updated) } })
     },
 
     addNote: async (request, response) => {
       if (!mongoose.isValidObjectId(request.params.id)) throw notFound()
       const report = await ReportModel.findById(request.params.id)
       assertWorkerOwnsTask(report, request.user.id)
-      response.status(201).json({ success: true, data: { report: serializeReport(await addTaskNote({ report, workerId: request.user.id, body: request.validatedBody.body })) } })
+      const updated = await addTaskNote({ report, workerId: request.user.id, body: request.validatedBody.body })
+      await AuditModel?.create({ actor: request.user.id, action: 'task_note_added', targetType: 'Report', targetId: updated._id, changes: { noteLength: request.validatedBody.body.length } })
+      response.status(201).json({ success: true, data: { report: serializeReport(updated) } })
     },
 
     addEvidence: async (request, response) => {
@@ -67,25 +71,30 @@ export function taskController({ ReportModel, UserModel, imageStorage }) {
       assertWorkerOwnsTask(report, request.user.id)
       assertCanAddEvidence(report)
       const image = await imageStorage.upload(request.file.buffer, { contentType: request.detectedImageType, folder: 'swachhai/completion-evidence' })
+      let updated
       try {
-        response.status(201).json({ success: true, data: { report: serializeReport(await addTaskEvidence({ report, workerId: request.user.id, image })) } })
+        updated = await addTaskEvidence({ report, workerId: request.user.id, image })
       } catch (error) {
         try { await imageStorage.remove(image.assetId) } catch { /* Best effort cleanup after a failed database write. */ }
         throw error
       }
+      await AuditModel?.create({ actor: request.user.id, action: 'task_status_changed', targetType: 'Report', targetId: updated._id, changes: { completionEvidenceAdded: true } })
+      response.status(201).json({ success: true, data: { report: serializeReport(updated) } })
     },
 
     submit: async (request, response) => {
       if (!mongoose.isValidObjectId(request.params.id)) throw notFound()
       const report = await ReportModel.findById(request.params.id)
       assertWorkerOwnsTask(report, request.user.id)
-      response.json({ success: true, data: { report: serializeReport(await submitTaskForVerification({ report, workerId: request.user.id })) } })
+      const updated = await submitTaskForVerification({ report, workerId: request.user.id })
+      await AuditModel?.create({ actor: request.user.id, action: 'task_status_changed', targetType: 'Report', targetId: updated._id, changes: { status: updated.status } })
+      response.json({ success: true, data: { report: serializeReport(updated) } })
     },
 
     adminQueue: async (request, response) => {
       const { page, limit, q } = parseTaskQuery(request.query)
       const filter = { status: { $in: adminQueueStatuses }, ...(q ? { reportNumber: reportNumberSearch(q) } : {}) }
-      response.json({ success: true, data: await pagedReports(ReportModel, filter, page, limit) })
+      response.json({ success: true, data: await pagedReports(ReportModel, filter, page, limit, true) })
     },
 
     adminWorkers: async (request, response) => {
@@ -108,6 +117,7 @@ export function taskController({ ReportModel, UserModel, imageStorage }) {
       if (!report) throw notFound()
       const worker = await UserModel.findSafeById(request.validatedBody.workerId)
       const updated = await assignReport({ report, worker, adminId: request.user.id, ...request.validatedBody, dueAt: request.validatedBody.dueAt ? new Date(request.validatedBody.dueAt) : null })
+      await AuditModel?.create({ actor: request.user.id, action: 'task_assigned', targetType: 'Report', targetId: updated._id, changes: { assignedWorker: String(worker._id || worker.id), priority: updated.priority } })
       response.json({ success: true, data: { report: serializeReport(updated) } })
     },
 
@@ -132,6 +142,7 @@ export function taskController({ ReportModel, UserModel, imageStorage }) {
       const report = await ReportModel.findById(request.params.id)
       if (!report) throw notFound()
       const updated = await verifyTask({ report, adminId: request.user.id, approved: request.taskApproval === true, reason: request.validatedBody.reason })
+      await AuditModel?.create({ actor: request.user.id, action: request.taskApproval ? 'task_verified' : 'task_returned', targetType: 'Report', targetId: updated._id, changes: { status: updated.status, reasonLength: request.validatedBody.reason.length } })
       response.json({ success: true, data: { report: serializeReport(updated) } })
     },
   }

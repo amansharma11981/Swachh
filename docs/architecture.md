@@ -22,7 +22,7 @@ Authentication and role checks are enforced by the API. The client auth provider
 
 A citizen sends one bounded multipart upload and validated report fields. The API checks the image's file signature, verifies the supplied MIME type, uploads it through the storage adapter, then persists the report and its first status-history event. If MongoDB creation fails, the API attempts to delete the newly uploaded asset. Cloudinary credentials remain server-only. When storage is absent, report creation fails explicitly with HTTP 503.
 
-Locations can be manually described with or without a coordinate pair. When present, coordinates are stored as GeoJSON `[longitude, latitude]`. Browser GPS is only requested after a button action and is recorded as unverified. No geospatial index is used without spatial queries. Provisional zones have no asserted boundary/coordinates.
+Locations can be manually described with or without a coordinate pair. When present, coordinates are stored as GeoJSON `[longitude, latitude]`. Browser GPS is only requested after a button action and is recorded as unverified; citizens may also select a pin on the Leaflet map. The report collection has a 2dsphere index for geographic queries. Provisional zones have no asserted boundary/coordinates. Map responses are scoped to a citizen's own reports, a worker's assignments, or all reports for administrators.
 
 ## Session
 

@@ -45,7 +45,7 @@ No new environment variables were added. Worker completion photos reuse `REPORT_
 
 ## Notifications and limits
 
-There is no separate notification collection, push delivery, email, or real-time transport. The assignment audit trail and role-specific dashboard queue expose the current state when refreshed. Due dates are metadata only; automatic scheduling/escalation is not implemented. The worker view does not geocode or render a map; it displays the report's supplied location label and optional coordinates remain available in report data.
+There is no separate notification collection, push delivery, email, or real-time transport. The assignment audit trail and role-specific dashboard queue expose the current state when refreshed. Due dates are metadata only; automatic scheduling/escalation is not implemented. The worker map displays only geolocated reports assigned to the signed-in worker; it does not geocode reports or infer coordinates.
 
 ## Deployment and rollback
 

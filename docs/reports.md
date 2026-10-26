@@ -22,7 +22,7 @@ Every newly created report starts as `submitted`, priority `normal`, with a serv
 | duplicate | none |
 | reopened | under_review, assigned |
 
-Worker and administrator status changes use the task service and append actor/timestamp events to status and assignment history. The citizen timeline includes the newly supported verification status. Admin review and worker completion UI are part of Phase 5.
+Worker changes use the task service; administrator moderation uses the existing transition service. Both append actor/timestamp history. The citizen timeline includes the verification status. Phase 8 adds report moderation, audit history, map views, and real metrics while preserving the Phase 5 worker completion flow.
 
 ## Images
 
@@ -34,9 +34,9 @@ Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` i
 
 ## Location and zones
 
-Browser geolocation is requested only after the citizen selects **Use my current location**. Coordinates are stored as GeoJSON `[longitude, latitude]`, validated against longitude/latitude ranges, and labeled as unverified browser location. Manual entry requires a place/landmark; coordinates are optional but must be supplied as a valid pair. There is no map or geocoder dependency, so no location is fabricated. Exact coordinates remain with the report record; no automatic retention/cleanup policy is implemented yet, so deployment owners must define a retention period before collecting real public submissions.
+Browser geolocation is requested only after the citizen selects **Use my current location**. The Leaflet map also lets the citizen click a location; map-selected or manually entered coordinates are stored as GeoJSON `[longitude, latitude]` and validated against longitude/latitude ranges. The map’s default center is a configurable initial viewport only and is never assigned to a report. Exact coordinates remain on the report record; no automatic retention/cleanup policy is implemented yet, so deployment owners must define a retention period before collecting real public submissions.
 
-`REPORT_ZONES` is a semicolon-separated list of `zone-id=Display name`. Configured active zones are synchronized at API startup. Zone names are snapshots on reports; the initial NIT More, Ashok Rajpath, and NIT/Gandhi Ghat names are provisional and have no verified boundaries or coordinates. The UI labels them accordingly. No geospatial index is created because no spatial query is implemented.
+`REPORT_ZONES` is a semicolon-separated list of `zone-id=Display name`. Configured active zones are synchronized at API startup. Zone names are snapshots on reports; the initial NIT More, Ashok Rajpath, and NIT/Gandhi Ghat names are provisional and have no verified boundaries or coordinates. The UI labels them accordingly. A 2dsphere index is used for actual stored report locations; it does not create or imply campus boundaries.
 
 ## API and UI
 
@@ -47,9 +47,16 @@ Browser geolocation is requested only after the citizen selects **Use my current
 - `PATCH /api/v1/reports/:id`: owner-only description/category/zone update before review.
 - `GET /api/v1/reports/meta/zones`: active configured zones and whether image storage is enabled.
 - `GET /api/v1/reports?page=1&limit=10&status=...`: administrator-only report listing.
+- `GET /api/v1/reports/map`: role-scoped geolocated reports; citizens see only their own reports, workers only assigned reports, and administrators all located reports. Markers never include reporter contact details or internal notes.
+- `GET /api/v1/reports/admin/metrics`: real counts, category/zone aggregations, and average resolution duration for administrators.
+- `PATCH /api/v1/reports/admin/:id/moderate`: administrator correction of category, priority, status, optional AI review decision, and private note; status transitions are validated and actions are audited.
+- `GET /api/v1/reports/admin/:id/duplicate-candidates` and `POST /api/v1/reports/admin/:id/duplicates`: heuristic duplicate candidates and administrator-reviewed links. Candidates are never auto-closed.
+- `GET /api/v1/reports/admin/audit` and `GET /api/v1/reports/admin/:id/audit`: append-only administrative event listings.
 
 Run `npm run test:server` for isolated API tests and `npm run test:client` for React tests. The tests use mocked Mongoose models and mocked image storage; they do not upload to Cloudinary or write to the configured Atlas database.
 
-## Current limits
+## Phase 6–8 notes and limits
 
-AI classification, priority assessment, admin review/status endpoints, worker assignment, worker completion, notifications, maps, and GPS reverse geocoding are not implemented. Cloudinary delivery is not private/signed in this phase. Report images and precise coordinates should be treated as sensitive user content even though the app does not publish them in a public listing.
+AI image classification is optional. After a citizen chooses **Analyze image with AI**, the API sends that image and up to 500 characters of its description to Groq using backend-only `GROQ_API_KEY`; `GROQ_VISION_MODEL` defaults to `qwen/qwen3.8-27b`. Analysis output is validated and bound to the exact image/description with a short-lived server signature before it can be saved on the report. Provider failures do not block manual report submission. Model confidence is not treated as calibrated or shown as a score. Cloudinary delivery is not private/signed in this phase. Report images and precise coordinates should be treated as sensitive user content.
+
+The map uses OpenStreetMap tiles with visible attribution and a configurable tile URL. Configure `VITE_MAP_CENTER_LAT`, `VITE_MAP_CENTER_LNG`, and optionally `VITE_MAP_TILE_URL` in the frontend environment. The map center is not a complaint location. Use the standard tile server in accordance with its [usage policy](https://operations.osmfoundation.org/policies/tiles/); do not bulk-download or prefetch tiles.

@@ -33,9 +33,10 @@ export async function transitionReportStatus({ report, toStatus, actorId, note =
   return report.save()
 }
 
-export function serializeReport(report) {
+export function serializeReport(report, { admin = false } = {}) {
   if (!report) return null
   const value = typeof report.toObject === 'function' ? report.toObject() : { ...report }
   const { __v, ...safe } = value
+  if (!admin) { delete safe.moderationNotes; delete safe.relatedReports }
   return { ...safe, id: String(safe.id || safe._id), reporter: String(safe.reporter?._id || safe.reporter) }
 }

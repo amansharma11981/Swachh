@@ -1,0 +1,32 @@
+import { useEffect, useState } from 'react'
+import { Activity, AlertTriangle, ArrowUpRight, CheckCircle2, Clock3, MapPinned, RefreshCw, ShieldAlert } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { reportService, reportCategoryLabel, REPORT_CATEGORIES } from '../features/reports/reportService.js'
+import '../features/tasks/tasks.css'
+
+const metricsCards = [
+  ['total', 'All reports', Activity], ['pending', 'Pending review', Clock3], ['inProgress', 'In progress', RefreshCw], ['resolved', 'Resolved', CheckCircle2], ['awaitingReview', 'Needs review', ShieldAlert], ['highPriorityOpen', 'High priority open', AlertTriangle],
+]
+
+export default function AdminDashboardPage() {
+  const [data, setData] = useState(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('')
+  const [audit, setAudit] = useState([])
+  const [filters, setFilters] = useState({ from: '', to: '', status: '', category: '', priority: '', zoneId: '' }); const [zones, setZones] = useState([])
+  const setFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }))
+  useEffect(() => { let active = true; setLoading(true); setError(''); reportService.getAdminMetrics(filters).then((value) => { if (active) setData(value) }).catch((e) => { if (active) setError(e.message || 'Could not load admin metrics.') }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [filters])
+  useEffect(() => { let active = true; reportService.getZones().then((result) => { if (active) setZones(result.zones || []) }).catch(() => {}); return () => { active = false } }, [])
+  const maxCategory = Math.max(1, ...(data?.byCategory || []).map((item) => item.count))
+  useEffect(() => { let active = true; reportService.getRecentAudit().then((result) => { if (active) setAudit(result.events || []) }).catch(() => { if (active) setAudit([]) }); return () => { active = false } }, [])
+  return <section className="tasks-page admin-overview">
+    <div className="eyebrow"><span className="eyebrow-line" />OPERATIONS / OVERVIEW</div>
+    <div className="dashboard-heading"><div><h1>Operations overview<span className="accent-dot">.</span></h1><p>Live totals from submitted reports. Counts describe reports received by this pilot.</p></div><Link className="text-link" to="/admin/map">Open report map <MapPinned size={15} /></Link></div>
+    <div className="admin-date-filters"><label>From<input type="date" value={filters.from} onChange={(e) => setFilter('from', e.target.value)} /></label><label>To<input type="date" value={filters.to} onChange={(e) => setFilter('to', e.target.value)} /></label><label>Status<select value={filters.status} onChange={(e) => setFilter('status', e.target.value)}><option value="">All statuses</option>{['submitted','under_review','assigned','in_progress','submitted_for_verification','resolved','rejected','duplicate','reopened'].map((v) => <option key={v} value={v}>{v.replaceAll('_', ' ')}</option>)}</select></label><label>Category<select value={filters.category} onChange={(e) => setFilter('category', e.target.value)}><option value="">All categories</option>{REPORT_CATEGORIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Priority<select value={filters.priority} onChange={(e) => setFilter('priority', e.target.value)}><option value="">All priorities</option>{['low','normal','high','urgent'].map((v) => <option key={v} value={v}>{v}</option>)}</select></label><label>Zone<select value={filters.zoneId} onChange={(e) => setFilter('zoneId', e.target.value)}><option value="">All zones</option>{zones.map((zone) => <option key={zone.zoneId} value={zone.zoneId}>{zone.name}</option>)}</select></label><button className="button button-secondary" type="button" onClick={() => setFilters({ from: '', to: '', status: '', category: '', priority: '', zoneId: '' })}>Clear filters</button><Link to="/admin/reports" className="button button-secondary">Manage reports <ArrowUpRight size={15} /></Link></div>
+    {error && <div className="task-alert" role="alert">{error}</div>}
+    {loading ? <div className="report-loading" role="status">Loading database metrics…</div> : data && <>
+      <div className="admin-metric-grid">{metricsCards.map(([key, label, Icon]) => <article className="task-stat" key={key}><span><Icon size={17} /></span><div><small>{label}</small><strong>{data[key] ?? 0}</strong></div></article>)}</div>
+      <div className="admin-analytics-grid"><section className="admin-analytics-panel"><div className="section-title-row"><div><span className="demo-label">OBSERVED RECORDS</span><h2>Reports by category</h2></div></div>{data.byCategory?.length ? <ul className="admin-bar-list">{data.byCategory.map(({ _id, count }) => <li key={_id}><div><span>{reportCategoryLabel(_id)}</span><strong>{count}</strong></div><span className="admin-bar-track"><i style={{ width: `${Math.max(3, count / maxCategory * 100)}%` }} /></span></li>)}</ul> : <p>No reports match this period.</p>}</section>
+      <section className="admin-analytics-panel"><div className="section-title-row"><div><span className="demo-label">PILOT LABELS</span><h2>Reports by zone</h2></div></div>{data.byZone?.length ? <ul className="admin-zone-list">{data.byZone.map(({ _id, count }) => <li key={_id}><span>{_id}</span><strong>{count}</strong></li>)}</ul> : <p>No zone reports in this period.</p>}<p className="admin-method-note">Average resolution: {data.averageResolutionMs == null ? 'insufficient resolved timestamps' : `${Math.round(data.averageResolutionMs / 3600000)} hours`}.</p><p className="admin-method-note">Counts reflect reports in the selected submission date range. They are not an estimate of total waste.</p></section></div>
+      <section className="admin-analytics-panel admin-audit-overview"><div className="section-title-row"><div><span className="demo-label">APPEND-ONLY EVENT RECORDS</span><h2>Recent administrative activity</h2></div></div>{audit.length ? <ul className="admin-zone-list">{audit.slice(0, 8).map((event) => <li key={event._id}><span><strong>{event.action?.replaceAll('_', ' ')}</strong> · {event.targetType} {String(event.targetId).slice(-7)}<small>{event.createdAt ? new Date(event.createdAt).toLocaleString() : 'Time unavailable'}</small></span><code>{JSON.stringify(event.changes || {})}</code></li>)}</ul> : <p>No administrative audit events are recorded yet.</p>}</section>
+    </>}
+  </section>
+}

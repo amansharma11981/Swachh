@@ -52,7 +52,7 @@ Admin only. `GET /users/approval-requests` lists pending worker/admin signup req
 
 ### `GET /reports/meta/zones`
 
-Citizen session required. Returns active configured zone labels and `imageUploadEnabled`. Zone names are provisional; `boundaryVerified` is false until verified geographic data is supplied.
+Authenticated citizen, worker, or administrator session required. Returns active configured zone labels and `imageUploadEnabled`. Zone names are provisional; `boundaryVerified` is false until verified geographic data is supplied.
 
 ### `POST /reports`
 
@@ -69,6 +69,10 @@ zoneId: optional configured zone identifier
 ```
 
 Coordinates must be within latitude `[-90,90]` and longitude `[-180,180]`; storage order is GeoJSON `[longitude, latitude]`. The reporter is derived from the authenticated cookie. Success returns HTTP 201 with the saved report, assigned `SW-000001`-style number, initial `submitted` status, normal priority, stored image reference, and server-created initial history event. If Cloudinary is not configured the endpoint returns 503; no report is created.
+
+### `POST /reports/analyze`
+
+Citizen session required; limited to five analysis requests per hour. Send multipart `image` (the same signature-validated JPEG/PNG/WebP size limits as report upload) plus `description` (10–2000 characters). When `GROQ_API_KEY` is configured, the backend sends the selected image and at most 500 characters of description to Groq's vision-capable Chat Completions endpoint. The response is validated and contains a suggested category and priority, a brief visual summary, priority rationale, next action, and status. No model confidence is represented as a calibrated score. The endpoint returns a short-lived signed token bound to the caller, image bytes, content type, and description; report creation verifies this token before persisting the analysis. The browser never receives the Groq key. If AI is unavailable or not configured, manual report submission remains available.
 
 ### `GET /reports/dashboard`
 
@@ -88,7 +92,21 @@ Owner only, and only while status is `submitted`. Body accepts one or more of `d
 
 ### `GET /reports?page=1&limit=10&status=under_review`
 
-Administrator only, paginated all-report listing. Citizen history is never used to access other users' reports.
+Administrator only, paginated all-report listing with optional category, priority, zone, date-range, and search filters. Citizen history is never used to access other users' reports.
+
+### Map, moderation, analytics, and audit
+
+| Method | Path | Access and purpose |
+| --- | --- | --- |
+| GET | `/reports/map` | Citizen sees own geolocated records; worker sees assigned geolocated records; admin sees all located reports. Supports category/status/priority/zone/from/to filters and bounded result count. |
+| GET | `/reports/admin/metrics?from=&to=&zoneId=` | Admin-only real report totals, status/category/zone aggregates, open high-priority count, and average resolution time when resolved timestamps exist. |
+| GET | `/reports/admin/hotspots?from=&to=&zoneId=` | Admin-only approximate 0.002-degree location grid; only cells with at least three reports are returned. A count concentration is not proof of waste prevalence. |
+| PATCH | `/reports/admin/:id/moderate` | Admin-only category/priority/status correction, optional AI decision and internal note. Existing workflow transitions are enforced and changes audited. |
+| GET | `/reports/admin/:id/duplicate-candidates` | Admin-only same-category reports within seven days; candidates are based on 300 m proximity or description token similarity and require human review. |
+| POST | `/reports/admin/:id/duplicates` | Admin-only reciprocal link to another report; `markDuplicate` defaults false. No deletion or automatic closure occurs. |
+| GET | `/reports/admin/audit` and `/reports/admin/:id/audit` | Admin-only append-only audit events. Logs omit free-text note contents, secrets, and credentials. |
+
+Report AI suggestions are optional and user-triggered. `POST /reports/analyze` sends the uploaded image and up to 500 characters of report description to Groq. The backend stores a suggestion only when the signed, short-lived analysis token matches the same user, image, and description on report submission. AI suggestions never set final priority; administrators review and decide. Without `GROQ_API_KEY`, reports can still be submitted manually.
 
 ## Worker tasks and administrator dispatch (Phase 5)
 

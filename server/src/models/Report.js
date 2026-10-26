@@ -45,6 +45,27 @@ const assignmentHistorySchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
 }, { _id: false })
 
+const aiAnalysisSchema = new mongoose.Schema({
+  provider: { type: String, enum: ['openai', 'groq'], required: true },
+  model: { type: String, required: true },
+  status: { type: String, enum: ['completed', 'inconclusive'], required: true },
+  suggestedCategory: { type: String, enum: REPORT_CATEGORIES, default: null },
+  suggestedPriority: { type: String, enum: ['low', 'normal', 'high', 'urgent'], default: null },
+  summary: { type: String, trim: true, maxlength: 300, default: '' },
+  priorityRationale: { type: String, trim: true, maxlength: 300, default: '' },
+  recommendedAction: { type: String, trim: true, maxlength: 300, default: '' },
+  confidence: { type: Number, min: 0, max: 1, default: null },
+  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  reviewedAt: { type: Date, default: null },
+  reviewDecision: { type: String, enum: ['accepted', 'corrected', 'inconclusive', null], default: null },
+}, { _id: false })
+
+const moderationNoteSchema = new mongoose.Schema({
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  body: { type: String, required: true, trim: true, minlength: 1, maxlength: 1000 },
+  createdAt: { type: Date, default: Date.now },
+}, { _id: false })
+
 const reportSchema = new mongoose.Schema({
   reportNumber: { type: String, required: true, unique: true, immutable: true },
   reporter: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, immutable: true },
@@ -60,6 +81,9 @@ const reportSchema = new mongoose.Schema({
   images: { type: [imageSchema], required: true, validate: { validator: (items) => items.length > 0, message: 'At least one image is required' } },
   status: { type: String, enum: REPORT_STATUSES, default: 'submitted', required: true },
   priority: { type: String, enum: ['low', 'normal', 'high', 'urgent'], default: 'normal', required: true },
+  aiAnalysis: { type: aiAnalysisSchema, default: undefined },
+  moderationNotes: { type: [moderationNoteSchema], default: [] },
+  relatedReports: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Report' }],
   statusHistory: { type: [statusHistorySchema], default: [] },
   assignedWorker: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
@@ -76,6 +100,9 @@ const reportSchema = new mongoose.Schema({
 reportSchema.index({ reporter: 1, createdAt: -1 })
 reportSchema.index({ assignedWorker: 1, status: 1, updatedAt: -1 })
 reportSchema.index({ status: 1, createdAt: -1 })
+reportSchema.index({ 'location.point': '2dsphere' })
+reportSchema.index({ category: 1, priority: 1, createdAt: -1 })
+reportSchema.index({ 'zone.zoneId': 1, createdAt: -1 })
 
 export const Report = mongoose.models.Report || mongoose.model('Report', reportSchema)
 

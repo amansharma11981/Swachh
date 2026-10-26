@@ -1,7 +1,7 @@
 import { toSafeUser } from '../models/User.js'
 import { notFound, AppError } from '../utils/errors.js'
 
-export function userController({ UserModel }) {
+export function userController({ UserModel, AuditModel }) {
   return {
     getMe: (request, response) => response.json({ success: true, data: { user: request.user } }),
     updateMe: async (request, response) => {
@@ -23,6 +23,8 @@ export function userController({ UserModel }) {
       let target
       try { target = await UserModel.findSafeById(request.params.id) } catch { throw notFound() }
       if (!target || target.approvalStatus !== 'pending' || !['worker', 'admin'].includes(target.requestedRole)) throw notFound()
+      const priorRole = target.role
+      const priorActive = target.isActive
       if (request.validatedBody.decision === 'approve') {
         target.role = target.requestedRole
         target.isActive = true
@@ -33,6 +35,7 @@ export function userController({ UserModel }) {
         target.approvalStatus = 'rejected'
       }
       await target.save()
+      await AuditModel?.create({ actor: request.user.id, action: 'user_role_changed', targetType: 'User', targetId: target._id, changes: { fromRole: priorRole, toRole: target.role, fromActive: priorActive, toActive: target.isActive, decision: request.validatedBody.decision } })
       response.json({ success: true, data: { user: toSafeUser(target) } })
     },
     updateRole: async (request, response) => {
@@ -44,11 +47,13 @@ export function userController({ UserModel }) {
         const activeAdmins = await UserModel.countDocuments({ role: 'admin', isActive: true })
         if (activeAdmins <= 1) throw new AppError(409, 'LAST_ADMIN', 'The final active administrator cannot be demoted')
       }
+      const priorRole = target.role
       target.role = request.validatedBody.role
       target.requestedRole = null
       target.approvalStatus = 'approved'
       target.isActive = true
       await target.save()
+      if (priorRole !== target.role) await AuditModel?.create({ actor: request.user.id, action: 'user_role_changed', targetType: 'User', targetId: target._id, changes: { fromRole: priorRole, toRole: target.role } })
       response.json({ success: true, data: { user: toSafeUser(target) } })
     },
   }

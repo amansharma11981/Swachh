@@ -33,9 +33,11 @@ TestUser.find = (query = {}) => ({
   ))).map((user) => user.toObject()),
 })
 
+class TestAudit { static async create(values) { return values } }
+
 function freshApp() {
   TestUser.records = new Map(); TestUser.nextId = 1
-  return { app: createApp({ config, UserModel: TestUser, getDatabaseStatus: () => 'connected' }), model: TestUser }
+  return { app: createApp({ config, UserModel: TestUser, AuditModel: TestAudit, getDatabaseStatus: () => 'connected' }), model: TestUser }
 }
 const origin = (call) => call.set('Origin', config.clientOrigins[0])
 const registerPayload = (overrides = {}) => ({ name: 'Aman Singh', email: 'Aman@Example.test', password: 'CleanCity2026!', confirmPassword: 'CleanCity2026!', ...overrides })

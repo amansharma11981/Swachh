@@ -66,17 +66,21 @@ class TestReport {
   }
   static async countDocuments(filter) { return this.records.filter((record) => matches(record, filter)).length }
 }
+class TestAudit {
+  static records = []
+  static async create(values) { const event = { ...values, _id: new mongoose.Types.ObjectId().toString(), createdAt: new Date() }; this.records.push(event); return event }
+}
 
 function token(id) { return jwt.sign({}, config.jwtSecret, { subject: id, issuer: 'swachhai-api', audience: 'swachhai-web', expiresIn: '2h' }) }
 function auth(call, id) { return call.set('Origin', origin).set('Cookie', `${config.cookieName}=${token(id)}`) }
 function freshApp() {
-  TestReport.records = []
+  TestReport.records = []; TestAudit.records = []
   const storage = {
     enabled: true,
     async upload(buffer, { contentType }) { return { provider: 'cloudinary', assetId: `completion/${buffer.length}`, secureUrl: 'https://images.example.test/completion.webp', contentType, size: buffer.length, uploadedAt: new Date() } },
     async remove() {},
   }
-  const app = createApp({ config, UserModel: TestUser, ReportModel: TestReport, imageStorage: storage, getDatabaseStatus: () => 'connected' })
+  const app = createApp({ config, UserModel: TestUser, ReportModel: TestReport, AuditModel: TestAudit, imageStorage: storage, getDatabaseStatus: () => 'connected' })
   return { app, storage }
 }
 async function report(values = {}) {

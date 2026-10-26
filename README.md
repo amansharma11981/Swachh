@@ -1,6 +1,6 @@
 ﻿# SwachhAI
 
-SwachhAI is an academic civic cleanliness reporting platform concept for NIT Patna. It includes a React/Vite client, MongoDB-backed Express API, secure cookie authentication, role checks, citizen reporting, and an administrator-to-worker assignment and completion-verification workflow. AI classification, operational maps, real-time notifications, and IoT remain future work.
+SwachhAI is an academic civic cleanliness reporting platform concept for NIT Patna. It includes a React/Vite client, MongoDB-backed Express API, secure cookie authentication, role checks, citizen reporting, optional user-triggered Groq/Qwen vision suggestions, role-scoped OpenStreetMap views, administrator moderation and metrics, append-only audit events, and an administrator-to-worker assignment and completion-verification workflow. Real-time notifications and IoT are not implemented.
 
 ## Architecture
 

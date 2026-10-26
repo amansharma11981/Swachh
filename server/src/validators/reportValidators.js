@@ -12,6 +12,7 @@ export const reportMultipartSchema = z.object({
   longitude: optionalCoordinate.refine((value) => value === undefined || (value >= -180 && value <= 180), 'Longitude must be between -180 and 180'),
   source: z.enum(['manual', 'gps']).default('manual'),
   zoneId: z.string().trim().max(80).optional().transform((value) => value || undefined),
+  analysisToken: z.string().max(5000).optional(),
 }).strict().superRefine((data, context) => {
   if ((data.latitude === undefined) !== (data.longitude === undefined)) {
     context.addIssue({ code: 'custom', path: ['latitude'], message: 'Provide both latitude and longitude, or leave both blank.' })
@@ -20,6 +21,10 @@ export const reportMultipartSchema = z.object({
     context.addIssue({ code: 'custom', path: ['latitude'], message: 'GPS coordinates are required when using current location.' })
   }
 })
+
+export const reportAnalysisSchema = z.object({
+  description: z.string().trim().min(10, 'Describe the issue in at least 10 characters').max(2000),
+}).strict()
 
 export const reportUpdateSchema = z.object({
   description: z.string().trim().min(10).max(2000).optional(),

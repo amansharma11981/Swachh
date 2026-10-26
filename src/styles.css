@@ -132,6 +132,7 @@
 .report-submit{width:100%;min-height:49px;justify-content:center;font-size:13px}
 .report-submit:disabled{opacity:.7;cursor:wait;transform:none}
 .report-submit-note{margin:12px 0 0;color:#8a8a8a;font-size:11px;line-height:1.55}
+.report-ai-controls{display:grid;gap:10px;margin:14px 0}.report-ai-result{display:grid;gap:7px;padding:14px;border:1px solid #554537;background:#1b1917}.report-ai-result>strong{color:#e8d5c7;font-size:13px}.report-ai-result p{margin:0;color:#b8b0aa;font-size:12px;line-height:1.6}.report-ai-result b{color:#e2d7ce}.report-ai-result small{color:#888;font-size:10px}.report-success .report-ai-result{margin-top:20px}
 .report-success{max-width:620px;margin:60px auto;padding:38px;border:1px solid #373737;background:#161616}
 .success-icon{display:grid;place-items:center;width:52px;height:52px;margin-bottom:24px;border:1px solid #614630;background:#24211e;color:var(--accent)}
 .report-success .demo-label{color:var(--accent)}

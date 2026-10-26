@@ -2,6 +2,7 @@ import { apiRequest, apiUpload } from '../../services/apiClient.js'
 
 export const reportService = {
   createReport: (formData, onProgress) => apiUpload('/reports', formData, { onProgress }),
+  analyzeImage: (formData) => apiUpload('/reports/analyze', formData),
   getDashboard: () => apiRequest('/reports/dashboard'),
   getMyReports: ({ page = 1, limit = 10, status } = {}) => {
     const query = new URLSearchParams({ page: String(page), limit: String(limit) })
@@ -10,6 +11,15 @@ export const reportService = {
   },
   getReport: (id) => apiRequest(`/reports/${encodeURIComponent(id)}`),
   getZones: () => apiRequest('/reports/meta/zones'),
+  getAdminMetrics: (filters = {}) => apiRequest(`/reports/admin/metrics?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
+  getAdminReports: (filters = {}) => apiRequest(`/reports?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
+  getRecentAudit: () => apiRequest('/reports/admin/audit'),
+  getMapReports: (filters = {}) => apiRequest(`/reports/map?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
+  getHotspots: (filters = {}) => apiRequest(`/reports/admin/hotspots?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
+  moderate: (id, changes) => apiRequest(`/reports/admin/${encodeURIComponent(id)}/moderate`, { method: 'PATCH', body: changes }),
+  linkDuplicate: (id, changes) => apiRequest(`/reports/admin/${encodeURIComponent(id)}/duplicates`, { method: 'POST', body: changes }),
+  getAuditHistory: (id) => apiRequest(`/reports/admin/${encodeURIComponent(id)}/audit`),
+  getDuplicateCandidates: (id) => apiRequest(`/reports/admin/${encodeURIComponent(id)}/duplicate-candidates`),
   updateReport: (id, changes) => apiRequest(`/reports/${encodeURIComponent(id)}`, { method: 'PATCH', body: changes }),
 }
 
