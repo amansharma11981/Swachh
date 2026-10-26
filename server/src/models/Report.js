@@ -52,6 +52,7 @@ const aiAnalysisSchema = new mongoose.Schema({
   suggestedCategory: { type: String, enum: REPORT_CATEGORIES, default: null },
   suggestedPriority: { type: String, enum: ['low', 'normal', 'high', 'urgent'], default: null },
   summary: { type: String, trim: true, maxlength: 300, default: '' },
+  suggestedDescription: { type: String, trim: true, maxlength: 500, default: '' },
   priorityRationale: { type: String, trim: true, maxlength: 300, default: '' },
   recommendedAction: { type: String, trim: true, maxlength: 300, default: '' },
   confidence: { type: Number, min: 0, max: 1, default: null },

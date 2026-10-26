@@ -90,9 +90,11 @@ export function reportController({ ReportModel, CounterModel, ZoneModel, imageSt
 
     analyze: async (request, response) => {
       if (!aiAnalysis?.configured) throw new AppError(503, 'AI_NOT_CONFIGURED', 'Image analysis is not configured. You can still submit this report using your selected category.')
-      const analysis = await aiAnalysis.analyze({ buffer: request.file.buffer, contentType: request.detectedImageType, description: request.validatedBody.description })
+      const inputDescription = request.validatedBody.description || ''
+      const analysis = await aiAnalysis.analyze({ buffer: request.file.buffer, contentType: request.detectedImageType, description: inputDescription })
       if (!['completed', 'inconclusive'].includes(analysis.status)) throw new AppError(503, 'AI_UNAVAILABLE', 'Image analysis is temporarily unavailable. You can still submit this report using your selected category.')
-      const analysisToken = signAnalysisToken({ analysis, userId: request.user.id, buffer: request.file.buffer, contentType: request.detectedImageType, description: request.validatedBody.description, secret: config.jwtSecret })
+      const reportDescription = inputDescription || analysis.suggestedDescription || analysis.summary
+      const analysisToken = signAnalysisToken({ analysis, userId: request.user.id, buffer: request.file.buffer, contentType: request.detectedImageType, description: reportDescription, secret: config.jwtSecret })
       response.json({ success: true, data: { analysis, analysisToken } })
     },
 

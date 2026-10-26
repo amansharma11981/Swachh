@@ -57,10 +57,21 @@ export default function ReportFormPage() {
   }
 
   const analyzeImage = async () => {
-    if (!image || form.description.trim().length < 10) { setAnalysisError('Add an image and at least 10 characters of description first.'); return }
+    if (!image) { setAnalysisError('Add a photo first.'); return }
     setAnalysisPending(true); setAnalysisError(''); setAnalysis(null); setAnalysisToken('')
-    const payload = new FormData(); payload.append('image', image); payload.append('description', form.description)
-    try { const result = await reportService.analyzeImage(payload); setAnalysis(result.analysis); setAnalysisToken(result.analysisToken || '') }
+    const payload = new FormData(); payload.append('image', image); payload.append('description', form.description.trim())
+    try {
+      const result = await reportService.analyzeImage(payload)
+      setAnalysis(result.analysis)
+      setAnalysisToken(result.analysisToken || '')
+      if (!form.description.trim()) {
+        const suggestedDescription = (result.analysis.suggestedDescription || result.analysis.summary || '').trim()
+        if (suggestedDescription.length >= 10) {
+          setForm((current) => current.description.trim() ? current : { ...current, description: suggestedDescription })
+          setFieldErrors((current) => ({ ...current, description: '' }))
+        }
+      }
+    }
     catch (requestError) { setAnalysisError(requestError.message || 'Image analysis is unavailable. You can continue with a manual category.') }
     finally { setAnalysisPending(false) }
   }
@@ -96,6 +107,7 @@ export default function ReportFormPage() {
   const submit = async (event) => {
     event.preventDefault()
     if (!image) { setImageError('Choose one image to attach to your report.'); return }
+    if (form.description.trim().length < 10) { setFieldErrors((current) => ({ ...current, description: 'Add at least 10 characters, or analyze the photo to get a suggested description.' })); return }
     setError(''); setFieldErrors({}); setProgress(0); setPending(true)
     const payload = new FormData()
     payload.append('image', image)
@@ -127,14 +139,14 @@ export default function ReportFormPage() {
         <section className="report-form-section"><div className="form-section-heading"><span>01</span><div><h2>Add a photo</h2><p>Use a clear image of the cleanliness issue. Supported: JPEG, PNG, WebP, up to {formatBytes(maximumImageBytes)}.</p></div></div>
           {image ? <div className="image-preview"><img src={previewUrl} alt="Preview of the selected report image" /><div className="image-preview-meta"><span>{image.name} · {formatBytes(image.size)}</span><button type="button" className="icon-button" onClick={() => chooseImage(null)} aria-label="Remove selected image"><X size={17} /></button></div></div> : <label className="image-picker"><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => chooseImage(event.target.files?.[0])} aria-describedby="image-help" /><span className="image-picker-icon"><ImagePlus size={23} /></span><strong>Select a photo</strong><span id="image-help">JPEG, PNG, or WebP · up to {formatBytes(maximumImageBytes)}</span></label>}
           {(imageError || fieldErrors.image) && <p className="report-field-error" role="alert">{imageError || fieldErrors.image}</p>}
-          {image && <div className="report-ai-controls"><p className="field-hint">Optional: selecting AI analysis sends this photo and up to 500 characters of your description to Groq for analysis. You can submit manually without using it.</p><button type="button" className="location-button" disabled={analysisPending || pending || form.description.trim().length < 10} onClick={analyzeImage}>{analysisPending ? <><LoaderCircle className="spin-icon" size={16} />Analyzing image…</> : <><Sparkles size={16} />Analyze image with AI</>}</button>{analysisError && <p className="report-field-error" role="status">{analysisError}</p>}{analysis && <div className="report-ai-result" role="status"><span className="demo-label">{analysis.status === 'completed' ? 'AI SUGGESTION · REVIEW BEFORE USE' : 'AI COULD NOT CLASSIFY THIS IMAGE'}</span>{analysis.status === 'completed' ? <><strong>{REPORT_CATEGORIES.find(([value]) => value === analysis.suggestedCategory)?.[1] || 'Suggested category'} · {analysis.suggestedPriority} priority</strong><p>{analysis.summary}</p>{analysis.priorityRationale && <p><b>Priority basis:</b> {analysis.priorityRationale}</p>}<p><b>Recommended next step:</b> {analysis.recommendedAction}</p><p className="field-hint">Priority is a suggestion. Administrators set the report’s final priority.</p><button type="button" className="task-history-toggle" onClick={() => { setForm((current) => ({ ...current, category: analysis.suggestedCategory })); setFieldErrors((current) => ({ ...current, category: '' })) }}>Use suggested category</button></> : <p>{analysis.recommendedAction || 'Choose the report category manually. The image did not support a reliable classification.'}</p>}{analysis.confidence == null && <small>No calibrated confidence score is provided.</small>}</div>}</div>}
+          {image && <div className="report-ai-controls"><p className="field-hint">Optional: analyze the photo to draft a description and category. Groq receives this photo and, if provided, up to 500 characters of your description. Review and edit the draft before submitting; manual entry is also available.</p><button type="button" className="location-button" disabled={analysisPending || pending} onClick={analyzeImage}>{analysisPending ? <><LoaderCircle className="spin-icon" size={16} />Analyzing image…</> : <><Sparkles size={16} />Analyze image with AI</>}</button>{analysisError && <p className="report-field-error" role="status">{analysisError}</p>}{analysis && <div className="report-ai-result" role="status"><span className="demo-label">{analysis.status === 'completed' ? 'AI SUGGESTION · REVIEW BEFORE USE' : 'AI COULD NOT CLASSIFY THIS IMAGE'}</span>{analysis.status === 'completed' ? <><strong>{REPORT_CATEGORIES.find(([value]) => value === analysis.suggestedCategory)?.[1] || 'Suggested category'} · {analysis.suggestedPriority} priority</strong><p>{analysis.summary}</p>{analysis.priorityRationale && <p><b>Priority basis:</b> {analysis.priorityRationale}</p>}<p><b>Recommended next step:</b> {analysis.recommendedAction}</p><p className="field-hint">Priority is a suggestion. Administrators set the report’s final priority.</p><button type="button" className="task-history-toggle" onClick={() => { setForm((current) => ({ ...current, category: analysis.suggestedCategory })); setFieldErrors((current) => ({ ...current, category: '' })) }}>Use suggested category</button></> : <p>{analysis.recommendedAction || 'Choose the report category manually. The image did not support a reliable classification.'}</p>}{analysis.confidence == null && <small>No calibrated confidence score is provided.</small>}</div>}</div>}
           {image && <button type="button" className="text-link replace-image" onClick={() => document.getElementById('replace-report-image')?.click()}>Replace image</button>}
           {image && <input id="replace-report-image" className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => chooseImage(event.target.files?.[0])} />}
         </section>
 
         <section className="report-form-section"><div className="form-section-heading"><span>02</span><div><h2>Describe the issue</h2><p>Choose the closest category and add enough detail to help with review.</p></div></div>
           <label className="report-field">Issue category<select required value={form.category} onChange={setField('category')} aria-invalid={Boolean(fieldErrors.category)}><option value="" disabled>Select a category</option>{REPORT_CATEGORIES.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select>{fieldErrors.category && <span className="report-field-error">{fieldErrors.category}</span>}</label>
-          <label className="report-field">Description<textarea required minLength={10} maxLength={2000} rows={5} value={form.description} onChange={setField('description')} placeholder="What did you notice? Include a nearby landmark if helpful." aria-invalid={Boolean(fieldErrors.description)} /> <span className="field-hint">{form.description.length}/2000 characters</span>{fieldErrors.description && <span className="report-field-error">{fieldErrors.description}</span>}</label>
+          <label className="report-field">Description<textarea required minLength={10} maxLength={2000} rows={5} value={form.description} onChange={setField('description')} placeholder={image ? 'Add your own description, or analyze the photo to draft one.' : 'What did you notice? Include a nearby landmark if helpful.'} aria-invalid={Boolean(fieldErrors.description)} /> <span className="field-hint">{form.description.length}/2000 characters · AI drafts are editable</span>{fieldErrors.description && <span className="report-field-error">{fieldErrors.description}</span>}</label>
         </section>
 
         <section className="report-form-section"><div className="form-section-heading"><span>03</span><div><h2>Set the location</h2><p>Location is not verified automatically. You can enter a place description without sharing GPS.</p></div></div>

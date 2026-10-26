@@ -23,7 +23,7 @@ export const reportMultipartSchema = z.object({
 })
 
 export const reportAnalysisSchema = z.object({
-  description: z.string().trim().min(10, 'Describe the issue in at least 10 characters').max(2000),
+  description: z.string().trim().max(2000).optional().default(''),
 }).strict()
 
 export const reportUpdateSchema = z.object({
