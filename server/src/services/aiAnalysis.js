@@ -63,15 +63,15 @@ export function createAiAnalysis({ apiKey, model = 'qwen/qwen3.8-27b', fetchImpl
 function sha256(value) { return createHash('sha256').update(value).digest('base64url') }
 function signature(encodedPayload, secret) { return createHmac('sha256', secret).update(encodedPayload).digest('base64url') }
 
-export function signAnalysisToken({ analysis, userId, buffer, contentType, description, secret, now = Date.now() }) {
+export function signAnalysisToken({ analysis, userId, buffer, contentType, description, zoneId = '', secret, now = Date.now() }) {
   const payload = Buffer.from(JSON.stringify({
-    sub: String(userId), imageHash: sha256(buffer), contentType, descriptionHash: sha256(description), analysis,
+    sub: String(userId), imageHash: sha256(buffer), contentType, descriptionHash: sha256(description), zoneHash: sha256(zoneId), analysis,
     exp: Math.floor(now / 1000) + tokenLifetimeSeconds,
   })).toString('base64url')
   return `${payload}.${signature(payload, secret)}`
 }
 
-export function verifyAnalysisToken(token, { userId, buffer, contentType, description, secret, now = Date.now() }) {
+export function verifyAnalysisToken(token, { userId, buffer, contentType, description, zoneId = '', secret, now = Date.now() }) {
   if (typeof token !== 'string' || token.length > 5000) return null
   const [payloadPart, signaturePart, extra] = token.split('.')
   if (!payloadPart || !signaturePart || extra !== undefined) return null
@@ -81,7 +81,7 @@ export function verifyAnalysisToken(token, { userId, buffer, contentType, descri
   try {
     const payload = JSON.parse(Buffer.from(payloadPart, 'base64url').toString('utf8'))
     if (payload.sub !== String(userId) || payload.exp <= Math.floor(now / 1000) || payload.contentType !== contentType) return null
-    if (payload.imageHash !== sha256(buffer) || payload.descriptionHash !== sha256(description)) return null
+    if (payload.imageHash !== sha256(buffer) || payload.descriptionHash !== sha256(description) || payload.zoneHash !== sha256(zoneId)) return null
     if (!payload.analysis || !['openai', 'groq'].includes(payload.analysis.provider) || !['completed', 'inconclusive'].includes(payload.analysis.status)) return null
     return payload.analysis
   } catch { return null }

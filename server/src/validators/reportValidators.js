@@ -24,6 +24,7 @@ export const reportMultipartSchema = z.object({
 
 export const reportAnalysisSchema = z.object({
   description: z.string().trim().max(2000).optional().default(''),
+  zoneId: z.string().trim().max(80).optional().transform((value) => value || undefined),
 }).strict()
 
 export const reportUpdateSchema = z.object({

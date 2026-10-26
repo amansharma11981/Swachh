@@ -7,6 +7,35 @@ import { transitionReportStatus } from '../services/reportService.js'
 import { signAnalysisToken, verifyAnalysisToken } from '../services/aiAnalysis.js'
 
 const initialStatuses = ['submitted', 'under_review']
+const priorityLevels = ['low', 'normal', 'high', 'urgent']
+const terminalReportStatuses = ['resolved', 'rejected', 'duplicate']
+const priorityTrendWindowDays = 30
+
+async function applyZoneReportTrend(ReportModel, analysis, zoneId) {
+  if (analysis.status !== 'completed' || !analysis.suggestedCategory) return analysis
+  const visualPriority = analysis.suggestedPriority
+  if (!zoneId) return { ...analysis, visualPriority, similarActiveReportCount: 0, priorityAdjustment: 0 }
+
+  const since = new Date(Date.now() - priorityTrendWindowDays * 24 * 60 * 60 * 1000)
+  const similarActiveReportCount = await ReportModel.countDocuments({
+    category: analysis.suggestedCategory,
+    'zone.zoneId': zoneId,
+    status: { $nin: terminalReportStatuses },
+    createdAt: { $gte: since },
+  })
+  const priorityAdjustment = similarActiveReportCount >= 7 ? 2 : similarActiveReportCount >= 3 ? 1 : 0
+  const baseIndex = priorityLevels.indexOf(visualPriority)
+  const suggestedPriority = priorityLevels[Math.min(priorityLevels.length - 1, baseIndex + priorityAdjustment)]
+  const trendNote = `Recent unresolved same-category reports in this zone (30 days): ${similarActiveReportCount}; priority adjusted +${priorityAdjustment}.`
+  return {
+    ...analysis,
+    visualPriority,
+    suggestedPriority,
+    similarActiveReportCount,
+    priorityAdjustment,
+    priorityRationale: [analysis.priorityRationale, trendNote].filter(Boolean).join(' ').slice(0, 300),
+  }
+}
 
 async function pagedQuery(Model, filter, page, limit, admin = false) {
   const [items, total] = await Promise.all([
@@ -62,8 +91,10 @@ export function reportController({ ReportModel, CounterModel, ZoneModel, imageSt
       const reportNumber = await nextReportNumber(CounterModel)
       const storedAnalysis = values.analysisToken ? verifyAnalysisToken(values.analysisToken, {
         userId: request.user.id, buffer: request.file.buffer, contentType: request.detectedImageType,
-        description: values.description, secret: config.jwtSecret,
+        description: values.description, zoneId: values.zoneId || '', secret: config.jwtSecret,
       }) : null
+      const aiPriorityApplies = storedAnalysis?.status === 'completed' && storedAnalysis.suggestedCategory === values.category
+      const initialPriority = aiPriorityApplies ? storedAnalysis.suggestedPriority : 'normal'
       const uploadedImage = await imageStorage.upload(request.file.buffer, { contentType: request.detectedImageType })
       try {
         const report = await ReportModel.create({
@@ -78,8 +109,8 @@ export function reportController({ ReportModel, CounterModel, ZoneModel, imageSt
           },
           ...(zone ? { zone: { zoneId: zone.zoneId, name: zone.name, boundaryVerified: zone.boundaryVerified } } : {}),
           ...(storedAnalysis ? { aiAnalysis: storedAnalysis } : {}),
-          images: [uploadedImage], status: 'submitted', priority: 'normal',
-          statusHistory: [{ fromStatus: null, toStatus: 'submitted', actor: request.user.id, timestamp: new Date(), note: 'Report submitted by citizen' }],
+          images: [uploadedImage], status: 'submitted', priority: initialPriority,
+          statusHistory: [{ fromStatus: null, toStatus: 'submitted', actor: request.user.id, timestamp: new Date(), note: aiPriorityApplies ? 'Initial priority set from image review and recent zone reports; administrator review may change it.' : 'Report submitted by citizen' }],
         })
         response.status(201).json({ success: true, data: { report: serializeReport(report) } })
       } catch (error) {
@@ -91,10 +122,13 @@ export function reportController({ ReportModel, CounterModel, ZoneModel, imageSt
     analyze: async (request, response) => {
       if (!aiAnalysis?.configured) throw new AppError(503, 'AI_NOT_CONFIGURED', 'Image analysis is not configured. You can still submit this report using your selected category.')
       const inputDescription = request.validatedBody.description || ''
-      const analysis = await aiAnalysis.analyze({ buffer: request.file.buffer, contentType: request.detectedImageType, description: inputDescription })
-      if (!['completed', 'inconclusive'].includes(analysis.status)) throw new AppError(503, 'AI_UNAVAILABLE', 'Image analysis is temporarily unavailable. You can still submit this report using your selected category.')
+      const zoneId = request.validatedBody.zoneId || ''
+      if (zoneId && !await ZoneModel.findOne({ zoneId, isActive: true }).lean()) throw badRequest('Choose an available pilot zone or leave the zone unselected')
+      const modelAnalysis = await aiAnalysis.analyze({ buffer: request.file.buffer, contentType: request.detectedImageType, description: inputDescription })
+      if (!['completed', 'inconclusive'].includes(modelAnalysis.status)) throw new AppError(503, 'AI_UNAVAILABLE', 'Image analysis is temporarily unavailable. You can still submit this report using your selected category.')
+      const analysis = await applyZoneReportTrend(ReportModel, modelAnalysis, zoneId)
       const reportDescription = inputDescription || analysis.suggestedDescription || analysis.summary
-      const analysisToken = signAnalysisToken({ analysis, userId: request.user.id, buffer: request.file.buffer, contentType: request.detectedImageType, description: reportDescription, secret: config.jwtSecret })
+      const analysisToken = signAnalysisToken({ analysis, userId: request.user.id, buffer: request.file.buffer, contentType: request.detectedImageType, description: reportDescription, zoneId, secret: config.jwtSecret })
       response.json({ success: true, data: { analysis, analysisToken } })
     },
 
