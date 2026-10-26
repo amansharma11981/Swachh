@@ -9,8 +9,8 @@ React routes + AuthProvider
   -> Vite proxy /api/v1
   -> Express: Helmet, CORS, origin guard, rate limits, role checks
   -> Zod validators + Multer memory upload + file signature checks
-  -> auth/report controllers and services
-  -> Mongoose User, Report, ReportCounter, Zone, Notification models -> MongoDB
+  -> auth/report/task/assistant/recommendation controllers and services
+  -> Mongoose User, Report, ReportCounter, Zone, Notification, RecommendationRun models -> MongoDB
   -> image-storage adapter -> Cloudinary when configured
 ```
 
@@ -22,7 +22,7 @@ Authentication and role checks are enforced by the API. The client auth provider
 
 A citizen sends one bounded multipart upload and validated report fields. The API checks the image's file signature, verifies the supplied MIME type, uploads it through the storage adapter, then persists the report and its first status-history event. If MongoDB creation fails, the API attempts to delete the newly uploaded asset. Cloudinary credentials remain server-only. When storage is absent, report creation fails explicitly with HTTP 503.
 
-Locations can be manually described with or without a coordinate pair. When present, coordinates are stored as GeoJSON `[longitude, latitude]`. Browser GPS is only requested after a button action and is recorded as unverified; citizens may also select a pin on the Leaflet map. The report collection has a 2dsphere index for geographic queries. Provisional zones have no asserted boundary/coordinates. Map responses are scoped to a citizen's own reports, a worker's assignments, or all reports for administrators.
+Locations can be manually described with or without a coordinate pair. When present, coordinates are stored as GeoJSON `[longitude, latitude]`. Browser GPS is only requested after a button action and is recorded as unverified; citizens may also select a pin on the Leaflet map. The report collection has a 2dsphere index for geographic queries. Provisional zones can have an administrator-configured approximate center/radius used only for automatic zone suggestions; it is not a verified boundary. Map responses are scoped to a citizen's own reports, a worker's assignments, or all reports for administrators.
 
 ## Session
 
@@ -35,3 +35,5 @@ Logout expires the browser cookie. There is no token denylist, so a copied JWT r
 Notifications are stored per user, with a unique `(recipient, eventKey)` index to prevent duplicate event delivery. A failed notification write is logged without failing the primary business action. Clients poll the authenticated feed every 30 seconds and when focus returns; no third-party push provider is used.
 
 Admin analytics are MongoDB aggregates over actual reports. AI analytics recommendations receive aggregate counts only. The civic assistant sends ordinary chat text to Groq only after the user submits a message. Report-status questions are answered from an ownership-filtered database query and stay out of the model request. Chat state is held in the browser only for the active page and is not persisted.
+
+Citizen complaint drafting uses the same optional Groq integration, validates the structured draft, and returns it to the browser without creating a report. The citizen must review and submit through the existing report form. Administrator recommendations first calculate aggregate evidence in MongoDB; Groq receives only the reporting period and keyed aggregates. The server rejects malformed, unsupported, or numerically embellished model text and binds each stored recommendation to exact evidence from that run. Review decisions and action descriptions are stored with an administrator ID and appended to the audit log. Optional post-action comparisons report observed counts without causal claims.

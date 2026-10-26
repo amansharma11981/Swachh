@@ -39,7 +39,13 @@ export function AuthProvider({ children }) {
     setUser(null); setStatus('unauthenticated'); setSessionError(null)
   }, [])
 
-  const value = useMemo(() => ({ user, status, sessionError, login, register, logout }), [user, status, sessionError, login, register, logout])
+  const updateProfile = useCallback(async (input) => {
+    const { user: updatedUser } = await authService.updateMyProfile(input)
+    setUser(updatedUser)
+    return updatedUser
+  }, [])
+
+  const value = useMemo(() => ({ user, status, sessionError, login, register, logout, updateProfile }), [user, status, sessionError, login, register, logout, updateProfile])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

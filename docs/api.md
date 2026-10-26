@@ -52,7 +52,7 @@ Admin only. `GET /users/approval-requests` lists pending worker/admin signup req
 
 ### `GET /reports/meta/zones`
 
-Authenticated citizen, worker, or administrator session required. Returns active configured zone labels and `imageUploadEnabled`. Zone names are provisional; `boundaryVerified` is false until verified geographic data is supplied.
+Authenticated citizen, worker, or administrator session required. Returns active configured zone labels, optional approximate geofence centers/radii, and `imageUploadEnabled`. Geofences configured by an administrator are for zone suggestions only and are not official boundaries.
 
 ### `POST /reports`
 
@@ -135,7 +135,7 @@ All task routes require the existing HttpOnly session. Worker routes are restric
 | POST | `/tasks/admin/:id/approve` | Approve submitted work; optional `{ "reason": "..." }` review note |
 | POST | `/tasks/admin/:id/return` | Return submitted work to the assigned worker with a reason of at least eight characters |
 
-Workers are provisioned by an administrator promoting an existing account using the existing `PATCH /users/:id/role` endpoint. Public registration cannot create worker or admin roles.
+Workers can register a pending access request; an active administrator must approve it before the account is activated. Administrators can also use the protected user-management flow for managed role changes.
 
 ## Notifications (Phase 9)
 
@@ -156,3 +156,13 @@ Elevated worker/admin signup requests and report creation notify active administ
 `GET /reports/admin/insights` is admin-only and asks Groq for optional advisory recommendations. Only filtered aggregate counts by status, category, and zone, plus the date labels, are sent; report text, images, and user identities are excluded. The source counts are returned alongside the generated text. AI insights are unavailable without `GROQ_API_KEY`; conventional metrics still work.
 
 `POST /assistant/chat` requires an authenticated session and is rate limited to 30 requests per 15 minutes. Body: `{ "messages": [{ "role": "user", "content": "..." }] }`; at most eight messages of up to 1000 characters each are accepted. Ordinary assistant messages are sent to Groq to answer sanitation questions, draft complaint text, and explain app navigation. It never submits a complaint. When a citizen asks for report status, the API uses a direct query filtered by the authenticated reporter ID; report details are not sent to Groq. Do not include secrets or sensitive personal information in chat. The assistant requires `GROQ_API_KEY` and fails with a clear temporary-unavailable response if Groq is not configured or unreachable.
+
+### Citizen complaint draft
+
+`POST /assistant/draft` requires an authenticated citizen session and accepts `{ "description": "..." }` with 10–1000 characters. It is rate limited to ten requests per hour. Groq returns a validated description, category suggestion, and up to three follow-up questions. The response says the draft has not been submitted. This endpoint does not create or modify a report; the citizen reviews the draft in the existing report form and submits that form explicitly.
+
+### Administrator recommendation review
+
+All recommendation endpoints require an active administrator session. `GET /recommendations/admin?page=1&limit=10&status=new` lists saved recommendation runs and review history. `POST /recommendations/admin/generate` accepts date, category, priority, status, and zone filters. The API calculates period, status, category, zone, unresolved, priority, resolution-time, and sufficiently supported location-grid aggregates from report records. The model receives only period labels and aggregate evidence, never report images, descriptions, identities, or individual report coordinates. The API validates its output and only persists recommendations that reference evidence keys from that snapshot. Fewer than three reports saves an insufficient-evidence snapshot without an AI call. AI does not change report status or official report priority.
+
+`PATCH /recommendations/admin/:id/review` accepts `{ "status": "reviewed" | "accepted" | "rejected" | "action_required" | "completed", "feedback": "...", "actionTaken": "..." }`. Marking a run complete requires an action description. Each review is associated with the administrator and written to the audit log. `GET /recommendations/admin/:id/outcome` is available after an action is recorded; it compares observed report counts in baseline and follow-up periods and does not infer that an action caused a change. Follow-up comparison is unavailable until there is some post-action time.

@@ -6,6 +6,12 @@ const zoneSchema = new mongoose.Schema({
   description: { type: String, maxlength: 300, default: '' },
   isActive: { type: Boolean, default: true },
   boundaryVerified: { type: Boolean, default: false },
+  // Approximate center-radius for automatic report zone suggestions. This is not an official boundary.
+  geofence: {
+    latitude: { type: Number, min: -90, max: 90 },
+    longitude: { type: Number, min: -180, max: 180 },
+    radiusMeters: { type: Number, min: 100, max: 20000 },
+  },
 }, { timestamps: true, strict: 'throw' })
 
 export async function seedConfiguredZones(ZoneModel, zones) {

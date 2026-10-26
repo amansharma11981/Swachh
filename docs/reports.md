@@ -36,7 +36,7 @@ Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` i
 
 Browser geolocation is requested only after the citizen selects **Use my current location**. The Leaflet map also lets the citizen click a location; map-selected or manually entered coordinates are stored as GeoJSON `[longitude, latitude]` and validated against longitude/latitude ranges. The map’s default center is a configurable initial viewport only and is never assigned to a report. Exact coordinates remain on the report record; no automatic retention/cleanup policy is implemented yet, so deployment owners must define a retention period before collecting real public submissions.
 
-`REPORT_ZONES` is a semicolon-separated list of `zone-id=Display name`. Configured active zones are synchronized at API startup. Zone names are snapshots on reports; the initial NIT More, Ashok Rajpath, and NIT/Gandhi Ghat names are provisional and have no verified boundaries or coordinates. The UI labels them accordingly. A 2dsphere index is used for actual stored report locations; it does not create or imply campus boundaries.
+`REPORT_ZONES` is a semicolon-separated list of `zone-id=Display name`. Configured active zones are synchronized at API startup. Zone names are snapshots on reports; the initial NIT More, Ashok Rajpath, and NIT/Gandhi Ghat names are provisional and have no verified boundaries. An administrator can open **Pilot zones** in the workspace, click each zone's approximate center on the map, set a 100–20,000 metre matching radius, and save it. Report forms then select the nearest configured center whose radius contains the provided coordinates (GPS, map pin, or manually entered coordinates). If no radius matches—or none has been configured—the citizen can select a zone manually. This circle is only a matching aid, not a verified campus, municipal, or service boundary. A 2dsphere index is used for actual stored report locations; it does not create or imply official zone boundaries.
 
 ## API and UI
 
@@ -46,6 +46,7 @@ Browser geolocation is requested only after the citizen selects **Use my current
 - `GET /api/v1/reports/:id`: own report, or any report for an administrator.
 - `PATCH /api/v1/reports/:id`: owner-only description/category/zone update before review.
 - `GET /api/v1/reports/meta/zones`: active configured zones and whether image storage is enabled.
+- `GET /api/v1/reports/admin/zones` and `PATCH /api/v1/reports/admin/zones/:zoneId/geofence`: administrator-only approximate zone center/radius configuration. Updates are recorded in the audit log.
 - `GET /api/v1/reports?page=1&limit=10&status=...`: administrator-only report listing.
 - `GET /api/v1/reports/map`: role-scoped geolocated reports; citizens see only their own reports, workers only assigned reports, and administrators all located reports. Markers never include reporter contact details or internal notes.
 - `GET /api/v1/reports/admin/metrics`: real counts, category/zone aggregations, and average resolution duration for administrators.

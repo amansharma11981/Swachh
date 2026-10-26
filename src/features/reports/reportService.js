@@ -11,6 +11,8 @@ export const reportService = {
   },
   getReport: (id) => apiRequest(`/reports/${encodeURIComponent(id)}`),
   getZones: () => apiRequest('/reports/meta/zones'),
+  getAdminZones: () => apiRequest('/reports/admin/zones'),
+  updateZoneGeofence: (zoneId, geofence) => apiRequest(`/reports/admin/zones/${encodeURIComponent(zoneId)}/geofence`, { method: 'PATCH', body: geofence }),
   getAdminMetrics: (filters = {}) => apiRequest(`/reports/admin/metrics?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
   getAdminInsights: (filters = {}) => apiRequest(`/reports/admin/insights?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),
   getAdminReports: (filters = {}) => apiRequest(`/reports?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`),

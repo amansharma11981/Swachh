@@ -13,9 +13,10 @@ function markerIcon(report) {
   return L.divIcon({ className: 'report-map-pin-wrap', html: `<span class="report-map-pin" style="--pin-color:${colors[report.priority] || colors.normal}"><span>${symbol}</span></span>`, iconSize: [30, 36], iconAnchor: [15, 30] })
 }
 
-export default function ReportMap({ reports = [], hotspots = [], selectable = false, selectedPoint, onSelectPoint, height = 480 }) {
+export default function ReportMap({ reports = [], hotspots = [], selectable = false, selectedPoint, selectRadiusMeters = 0, onSelectPoint, height = 480 }) {
   const host = useRef(null); const mapRef = useRef(null); const groupRef = useRef(null)
   const selectedMarker = useRef(null)
+  const radiusLayer = useRef(null)
   const hotspotLayer = useRef(null)
   const [tileError, setTileError] = useState(false)
   const callback = useRef(onSelectPoint); callback.current = onSelectPoint
@@ -69,7 +70,10 @@ export default function ReportMap({ reports = [], hotspots = [], selectable = fa
     const map = mapRef.current
     if (!map || !selectable) return
     if (selectedMarker.current) map.removeLayer(selectedMarker.current)
-    selectedMarker.current = selected ? L.circleMarker(selected, { radius: 9, color: '#d7b399', fillColor: '#d7b399', fillOpacity: .9 }).addTo(map).bindPopup('Selected report location') : null
-  }, [selected, selectable])
+    if (radiusLayer.current) map.removeLayer(radiusLayer.current)
+    if (selected) map.setView(selected, Math.max(map.getZoom(), 15))
+    selectedMarker.current = selected ? L.circleMarker(selected, { radius: 9, color: '#d7b399', fillColor: '#d7b399', fillOpacity: .9 }).addTo(map).bindPopup(selectRadiusMeters ? 'Approximate zone center' : 'Selected report location') : null
+    radiusLayer.current = selected && selectRadiusMeters > 0 ? L.circle(selected, { radius: selectRadiusMeters, color: '#ae805a', weight: 1, fillColor: '#ae805a', fillOpacity: .08, dashArray: '5 5' }).addTo(map) : null
+  }, [selected, selectable, selectRadiusMeters])
   return <div className="report-map-shell"><div className="report-map" ref={host} style={{ height }} role="application" aria-label={selectable ? 'Click map to select a report location' : 'Map of authorized report locations'} />{tileError && <p className="report-map-tile-error" role="status">Map tiles are temporarily unavailable. Check the connection or tile-provider settings.</p>}</div>
 }

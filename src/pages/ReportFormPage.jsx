@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertCircle, ArrowUpRight, CheckCircle2, ImagePlus, LoaderCircle, MapPin, Navigation2, Sparkles, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import Button from '../components/ui/Button.jsx'
 import { REPORT_CATEGORIES, reportService } from '../features/reports/reportService.js'
+import { nearestConfiguredZone } from '../features/reports/zoneMatching.js'
 import ReportMap from '../features/map/ReportMap.jsx'
 
 const maximumImageBytes = Number(import.meta.env.VITE_REPORT_MAX_IMAGE_SIZE_BYTES) || 5 * 1024 * 1024
@@ -10,7 +11,9 @@ const supportedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const formatBytes = (value) => `${(value / (1024 * 1024)).toFixed(value >= 1024 * 1024 ? 1 : 2)} MB`
 
 export default function ReportFormPage() {
-  const [form, setForm] = useState({ category: '', description: '', locationLabel: '', latitude: '', longitude: '', source: 'manual', zoneId: '' })
+  const location = useLocation()
+  const initialDraft = location.state?.assistantDraft || {}
+  const [form, setForm] = useState({ category: initialDraft.category || '', description: initialDraft.description || '', locationLabel: '', latitude: '', longitude: '', source: 'manual', zoneId: '' })
   const [image, setImage] = useState(null)
   const [imageError, setImageError] = useState('')
   const [zones, setZones] = useState([])
@@ -39,9 +42,12 @@ export default function ReportFormPage() {
 
   const setField = (key) => (event) => {
     const value = event.target.value
-    if (['description', 'zoneId'].includes(key)) { setAnalysis(null); setAnalysisToken(''); setAnalysisError('') }
+    if (['description', 'zoneId', 'latitude', 'longitude'].includes(key)) { setAnalysis(null); setAnalysisToken(''); setAnalysisError('') }
     if (['locationLabel', 'latitude', 'longitude'].includes(key)) { locationRequestId.current += 1; setLocating(false) }
-    setForm((current) => ({ ...current, [key]: value, ...(['locationLabel', 'latitude', 'longitude'].includes(key) ? { source: 'manual' } : {}) }))
+    const nextCoordinates = { latitude: key === 'latitude' ? value : form.latitude, longitude: key === 'longitude' ? value : form.longitude }
+    const matchingZone = nextCoordinates.latitude.trim() && nextCoordinates.longitude.trim() ? nearestConfiguredZone(zones, nextCoordinates.latitude, nextCoordinates.longitude) : null
+    setForm((current) => ({ ...current, [key]: value, ...(['locationLabel', 'latitude', 'longitude'].includes(key) ? { source: 'manual' } : {}), ...(['latitude', 'longitude'].includes(key) ? { zoneId: matchingZone?.zoneId || '' } : {}) }))
+    if (['latitude', 'longitude'].includes(key)) setZoneNotice(matchingZone ? `Suggested from this location: ${matchingZone.name} (${matchingZone.distance} m from its configured center).` : nextCoordinates.latitude && nextCoordinates.longitude ? zones.some((zone) => zone.geofence) ? 'This location is outside the configured pilot-zone radii. Choose a zone manually if appropriate.' : 'No zone centers are configured yet. Choose a zone manually or ask an administrator to set them.' : '')
     setFieldErrors((current) => ({ ...current, [key]: '' }))
     setError('')
   }
@@ -85,7 +91,10 @@ export default function ReportFormPage() {
       if (requestId !== locationRequestId.current) return
       const latitude = coords.latitude.toFixed(6)
       const longitude = coords.longitude.toFixed(6)
-      setForm((current) => ({ ...current, latitude, longitude, source: 'gps', locationLabel: `Current location (${latitude}, ${longitude})` }))
+      const matchingZone = nearestConfiguredZone(zones, latitude, longitude)
+      setForm((current) => ({ ...current, latitude, longitude, source: 'gps', locationLabel: `Current location (${latitude}, ${longitude})`, zoneId: matchingZone?.zoneId || '' }))
+      setZoneNotice(matchingZone ? `Selected ${matchingZone.name} from your location.` : zones.some((zone) => zone.geofence) ? 'Your location is outside the configured pilot-zone radii. You can choose a zone manually.' : 'No zone centers are configured yet. You can choose a zone manually.')
+      setAnalysis(null); setAnalysisToken(''); setAnalysisError('')
       setFieldErrors((current) => ({ ...current, locationLabel: '', latitude: '', longitude: '' }))
       setLocationError('')
       setLocating(false)
@@ -99,7 +108,10 @@ export default function ReportFormPage() {
 
   const selectMapPoint = ({ latitude, longitude }) => {
     const lat = latitude.toFixed(6), lng = longitude.toFixed(6)
-    setForm((current) => ({ ...current, latitude: lat, longitude: lng, source: 'manual', locationLabel: `Map location (${lat}, ${lng})` }))
+    const matchingZone = nearestConfiguredZone(zones, lat, lng)
+    setForm((current) => ({ ...current, latitude: lat, longitude: lng, source: 'manual', locationLabel: `Map location (${lat}, ${lng})`, zoneId: matchingZone?.zoneId || '' }))
+    setZoneNotice(matchingZone ? `Selected ${matchingZone.name} from the map pin.` : zones.some((zone) => zone.geofence) ? 'This pin is outside the configured pilot-zone radii. You can choose a zone manually.' : 'No zone centers are configured yet. You can choose a zone manually.')
+    setAnalysis(null); setAnalysisToken(''); setAnalysisError('')
     setFieldErrors((current) => ({ ...current, latitude: '', longitude: '', locationLabel: '' }))
     setLocationError('')
   }
@@ -136,7 +148,7 @@ export default function ReportFormPage() {
 
     <form className="report-form" onSubmit={submit}>
       <div className="report-form-main">
-        <section className="report-form-section"><div className="form-section-heading"><span>01</span><div><h2>Add a photo</h2><p>Use a clear image of the cleanliness issue. Supported: JPEG, PNG, WebP, up to {formatBytes(maximumImageBytes)}.</p></div></div>
+        <section className="report-form-section report-photo-section"><div className="form-section-heading"><span>03</span><div><h2>Add a photo</h2><p>Use a clear image of the cleanliness issue. Supported: JPEG, PNG, WebP, up to {formatBytes(maximumImageBytes)}.</p></div></div>
           {image ? <div className="image-preview"><img src={previewUrl} alt="Preview of the selected report image" /><div className="image-preview-meta"><span>{image.name} · {formatBytes(image.size)}</span><button type="button" className="icon-button" onClick={() => chooseImage(null)} aria-label="Remove selected image"><X size={17} /></button></div></div> : <label className="image-picker"><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => chooseImage(event.target.files?.[0])} aria-describedby="image-help" /><span className="image-picker-icon"><ImagePlus size={23} /></span><strong>Select a photo</strong><span id="image-help">JPEG, PNG, or WebP · up to {formatBytes(maximumImageBytes)}</span></label>}
           {(imageError || fieldErrors.image) && <p className="report-field-error" role="alert">{imageError || fieldErrors.image}</p>}
           {image && <div className="report-ai-controls">
@@ -161,12 +173,12 @@ export default function ReportFormPage() {
           {image && <input id="replace-report-image" className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" disabled={analysisPending || pending} onChange={(event) => chooseImage(event.target.files?.[0])} />}
         </section>
 
-        <section className="report-form-section"><div className="form-section-heading"><span>02</span><div><h2>Describe the issue</h2><p>Choose the closest category and add enough detail to help with review.</p></div></div>
+        <section className="report-form-section report-details-section"><div className="form-section-heading"><span>01</span><div><h2>Describe the issue</h2><p>Choose the closest category and add enough detail to help with review.</p></div></div>
           <label className="report-field">Issue category<select required value={form.category} onChange={setField('category')} aria-invalid={Boolean(fieldErrors.category)}><option value="" disabled>Select a category</option>{REPORT_CATEGORIES.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select>{fieldErrors.category && <span className="report-field-error">{fieldErrors.category}</span>}</label>
           <label className="report-field">Description<textarea required minLength={10} maxLength={2000} rows={5} value={form.description} disabled={analysisPending} onChange={setField('description')} placeholder={image ? 'Add your own description, or analyze the photo to draft one.' : 'What did you notice? Include a nearby landmark if helpful.'} aria-invalid={Boolean(fieldErrors.description)} /> <span className="field-hint">{form.description.length}/2000 characters · AI drafts are editable</span>{fieldErrors.description && <span className="report-field-error">{fieldErrors.description}</span>}</label>
         </section>
 
-        <section className="report-form-section"><div className="form-section-heading"><span>03</span><div><h2>Set the location</h2><p>Location is not verified automatically. You can enter a place description without sharing GPS.</p></div></div>
+        <section className="report-form-section report-location-section"><div className="form-section-heading"><span>02</span><div><h2>Set the location</h2><p>Location is not verified automatically. You can enter a place description without sharing GPS.</p></div></div>
           <button type="button" className="location-button" onClick={useCurrentLocation} disabled={locating || pending}><Navigation2 size={17} />{locating ? 'Finding location…' : 'Use my current location'}</button>
           <div className="report-map-instruction"><MapPin size={15} />Or click the map to place a pin. Drag and zoom to the right spot.</div>
           <ReportMap selectable selectedPoint={form.latitude && form.longitude ? { latitude: form.latitude, longitude: form.longitude } : null} onSelectPoint={selectMapPoint} height={320} />
@@ -175,17 +187,20 @@ export default function ReportFormPage() {
           <div className="coordinate-fields"><label className="report-field">Latitude <span className="field-hint">Optional</span><input inputMode="decimal" value={form.latitude} onChange={setField('latitude')} placeholder="e.g. 25.62" aria-invalid={Boolean(fieldErrors.latitude)} /></label><label className="report-field">Longitude <span className="field-hint">Optional</span><input inputMode="decimal" value={form.longitude} onChange={setField('longitude')} placeholder="e.g. 85.17" aria-invalid={Boolean(fieldErrors.longitude)} /></label></div>
           {(fieldErrors.latitude || fieldErrors.longitude) && <p className="report-field-error">{fieldErrors.latitude || fieldErrors.longitude}</p>}
           <p className="field-hint location-privacy">Coordinates are stored only when provided. Browser location is requested only when you choose the button above.</p>
-          <label className="report-field">Pilot zone <span className="field-hint">Optional · select before AI analysis to use recent reports in this zone</span><select value={form.zoneId} disabled={analysisPending} onChange={setField('zoneId')} aria-invalid={Boolean(fieldErrors.zoneId)}><option value="">No zone selected</option>{zones.map((zone) => <option key={zone.zoneId} value={zone.zoneId}>{zone.name}{zone.boundaryVerified ? '' : ' · provisional label'}</option>)}</select>{fieldErrors.zoneId && <span className="report-field-error">{fieldErrors.zoneId}</span>}{zoneNotice && <span className="field-hint">{zoneNotice}</span>}</label>
+          <label className="report-field">Pilot zone <span className="field-hint">Auto-selected from configured coordinates; you can change it</span><select value={form.zoneId} disabled={analysisPending} onChange={setField('zoneId')} aria-invalid={Boolean(fieldErrors.zoneId)}><option value="">No zone selected</option>{zones.map((zone) => <option key={zone.zoneId} value={zone.zoneId}>{zone.name}{zone.boundaryVerified ? '' : ' · provisional label'}</option>)}</select>{fieldErrors.zoneId && <span className="report-field-error">{fieldErrors.zoneId}</span>}{zoneNotice && <span className="field-hint">{zoneNotice}</span>}</label>
         </section>
       </div>
 
+      <div className="report-submit-wrap">
+        {pending && <div className="upload-progress" role="status"><div className="upload-progress-top"><span>{progress < 100 ? 'Uploading image' : 'Saving report'}</span><span>{progress}%</span></div><progress max="100" value={progress} aria-label="Image upload progress" /></div>}
+        <button className="button button-primary report-submit" type="submit" disabled={pending || storageConfigured === false}>{pending ? <><LoaderCircle className="spin-icon" size={16} />Submitting…</> : <>{error ? 'Retry submission' : 'Submit report'} <ArrowUpRight size={16} /></>}</button>
+        <p className="report-submit-note">{storageConfigured === false ? 'Submission is disabled until image storage is configured.' : <>Your report starts as <strong>Submitted</strong>. Review all details before sending.</>}</p>
+      </div>
       <aside className="report-review"><span className="demo-label">REVIEW BEFORE SENDING</span><h2>Your report</h2>
         <div className="review-image">{previewUrl ? <img src={previewUrl} alt="Selected report preview" /> : <span><ImagePlus size={22} />Photo preview</span>}</div>
         <dl><div><dt>Category</dt><dd>{REPORT_CATEGORIES.find(([value]) => value === form.category)?.[1] || 'Not selected'}</dd></div><div><dt>Description</dt><dd>{form.description || 'Add a short description'}</dd></div><div><dt>Location</dt><dd>{form.locationLabel || 'Add a place or landmark'}</dd></div><div><dt>Zone</dt><dd>{zones.find((zone) => zone.zoneId === form.zoneId)?.name || 'No zone selected'}</dd></div></dl>
-        {pending && <div className="upload-progress" role="status"><div className="upload-progress-top"><span>{progress < 100 ? 'Uploading image' : 'Saving report'}</span><span>{progress}%</span></div><progress max="100" value={progress} aria-label="Image upload progress" /></div>}
-        <button className="button button-primary report-submit" type="submit" disabled={pending || storageConfigured === false}>{pending ? <><LoaderCircle className="spin-icon" size={16} />Submitting…</> : <>{error ? 'Retry submission' : 'Submit report'} <ArrowUpRight size={16} /></>}</button>
-        <p className="report-submit-note">{storageConfigured === false ? 'Submission is disabled until image storage is configured.' : <>Your report starts as <strong>Submitted</strong>. AI suggestions are optional; you can always choose the category manually.</>}</p>
       </aside>
+
     </form>
   </section>
 }

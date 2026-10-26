@@ -6,6 +6,7 @@ import { User } from './models/User.js'
 import { Report, ReportCounter } from './models/Report.js'
 import { AuditLog } from './models/AuditLog.js'
 import { Notification } from './models/Notification.js'
+import { RecommendationRun } from './models/Recommendation.js'
 import { Zone } from './models/Zone.js'
 import { databaseStatus } from './config/db.js'
 import { originGuard } from './middleware/originGuard.js'
@@ -26,13 +27,15 @@ import { reportController } from './controllers/reportController.js'
 import { taskController } from './controllers/taskController.js'
 import { notificationController } from './controllers/notificationController.js'
 import { assistantController } from './controllers/assistantController.js'
+import { recommendationController } from './controllers/recommendationController.js'
 import { createImageStorage } from './services/imageStorage.js'
 import { createAiAnalysis } from './services/aiAnalysis.js'
 import { createNotificationService } from './services/notifications.js'
+import { recommendationRoutes } from './routes/recommendationRoutes.js'
 import { AppError } from './utils/errors.js'
 import { logger } from './utils/logger.js'
 
-export function createApp({ config, UserModel = User, ReportModel = Report, CounterModel = ReportCounter, ZoneModel = Zone, AuditModel = AuditLog, NotificationModel = Notification, imageStorage = createImageStorage(config), getDatabaseStatus = databaseStatus, authService = createAuthService({ UserModel, config }), aiAnalysisService = createAiAnalysis({ apiKey: config.groqApiKey, model: config.groqVisionModel }) }) {
+export function createApp({ config, UserModel = User, ReportModel = Report, CounterModel = ReportCounter, ZoneModel = Zone, AuditModel = AuditLog, NotificationModel = Notification, RecommendationModel = RecommendationRun, imageStorage = createImageStorage(config), getDatabaseStatus = databaseStatus, authService = createAuthService({ UserModel, config }), aiAnalysisService = createAiAnalysis({ apiKey: config.groqApiKey, model: config.groqVisionModel }) }) {
   const app = express()
   app.disable('x-powered-by')
   app.use(helmet())
@@ -62,6 +65,7 @@ export function createApp({ config, UserModel = User, ReportModel = Report, Coun
   const taskHandlers = taskController({ ReportModel, UserModel, imageStorage, AuditModel, notifications })
   const notificationHandlers = notificationController({ NotificationModel })
   const assistantHandlers = assistantController({ ReportModel, aiAnalysis: aiAnalysisService })
+  const recommendationHandlers = recommendationController({ ReportModel, RecommendationModel, aiAnalysis: aiAnalysisService, AuditModel })
   const api = express.Router()
   api.use('/health', healthRoutes(getDatabaseStatus))
   api.use('/auth', authRoutes({ controller: authHandlers, authenticate }))
@@ -70,6 +74,7 @@ export function createApp({ config, UserModel = User, ReportModel = Report, Coun
   api.use('/tasks', taskRoutes({ controller: taskHandlers, authenticate, config }))
   api.use('/notifications', notificationRoutes({ controller: notificationHandlers, authenticate }))
   api.use('/assistant', assistantRoutes({ controller: assistantHandlers, authenticate }))
+  api.use('/recommendations/admin', recommendationRoutes({ controller: recommendationHandlers, authenticate }))
   app.use('/api/v1', api)
   app.use(notFoundHandler)
   app.use(errorHandler)

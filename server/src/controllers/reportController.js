@@ -313,7 +313,23 @@ export function reportController({ ReportModel, CounterModel, ZoneModel, imageSt
 
     listZones: async (_request, response) => {
       const zones = await ZoneModel.find({ isActive: true }).sort({ name: 1 }).lean()
-      response.json({ success: true, data: { zones: zones.map(({ zoneId, name, description, boundaryVerified }) => ({ zoneId, name, description, boundaryVerified })), imageUploadEnabled: imageStorage.enabled } })
+      response.json({ success: true, data: { zones: zones.map(({ zoneId, name, description, boundaryVerified, geofence }) => ({ zoneId, name, description, boundaryVerified, geofence: geofence?.latitude != null && geofence?.longitude != null ? geofence : null })), imageUploadEnabled: imageStorage.enabled } })
+    },
+
+    adminZones: async (_request, response) => {
+      const zones = await ZoneModel.find({ isActive: true }).sort({ name: 1 }).lean()
+      response.json({ success: true, data: { zones: zones.map(({ zoneId, name, description, boundaryVerified, geofence }) => ({ zoneId, name, description, boundaryVerified, geofence: geofence?.latitude != null && geofence?.longitude != null ? geofence : null })) } })
+    },
+
+    updateZoneGeofence: async (request, response) => {
+      const zone = await ZoneModel.findOneAndUpdate(
+        { zoneId: request.params.zoneId, isActive: true },
+        { $set: { geofence: request.validatedBody } },
+        { new: true, runValidators: true },
+      ).lean()
+      if (!zone) throw notFound()
+      await AuditModel?.create({ actor: request.user.id, action: 'zone_geofence_updated', targetType: 'Zone', targetId: zone._id, changes: { zoneId: zone.zoneId, radiusMeters: zone.geofence.radiusMeters } })
+      response.json({ success: true, data: { zone: { zoneId: zone.zoneId, name: zone.name, description: zone.description, boundaryVerified: zone.boundaryVerified, geofence: zone.geofence } } })
     },
 
     dashboardStats: async (request, response) => {

@@ -13,7 +13,7 @@ For Atlas, create a database user and IP access entry in Atlas, then set its URI
 
 `GET http://localhost:5000/api/v1/health` reports readiness. A database-down response is HTTP 503. The server does not start listening until connection and index initialization succeed.
 
-`REPORT_MAX_IMAGE_SIZE_BYTES` defaults to `5242880` (5 MiB). `REPORT_ZONES` is a semicolon-separated list of `zone-id=Display name` values. The default NIT Patna labels are provisional and have no verified boundaries or coordinates.
+`REPORT_MAX_IMAGE_SIZE_BYTES` defaults to `5242880` (5 MiB). `REPORT_ZONES` is a semicolon-separated list of `zone-id=Display name` values. The default NIT Patna labels are provisional. After an admin signs in, use **Pilot zones** in the admin workspace to set approximate centers and radii on the map. Citizens' GPS, map pins, or typed coordinates can then automatically select the nearest configured zone; outside those circles, manual selection remains available. These radii are approximate matching aids, not verified boundaries.
 
 ## Production notes
 

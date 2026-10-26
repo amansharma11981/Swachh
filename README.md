@@ -1,6 +1,6 @@
 ﻿# SwachhAI
 
-SwachhAI is an academic civic cleanliness reporting platform concept for NIT Patna. It includes a React/Vite client, MongoDB-backed Express API, secure cookie authentication, role checks, citizen reporting, optional user-triggered Groq/Qwen vision suggestions, role-scoped OpenStreetMap views, administrator moderation and metrics, append-only audit events, and an administrator-to-worker assignment and completion-verification workflow. Real-time notifications and IoT are not implemented.
+SwachhAI is an academic civic cleanliness reporting platform concept for NIT Patna. It includes a React/Vite client, MongoDB-backed Express API, secure cookie authentication, role checks, citizen reporting, optional user-triggered Groq/Qwen vision suggestions, role-scoped OpenStreetMap views, administrator moderation and metrics, append-only audit events, administrator-to-worker assignment and completion verification, persisted in-app notifications (polled by the browser), an optional civic assistant, and evidence-backed administrator recommendations. IoT integration is not implemented.
 
 ## Architecture
 
@@ -66,6 +66,14 @@ Production hosting setup for Vercel, Railway or Render, Atlas, and Cloudinary is
 
 The backend can also be run from its directory with `npm run dev`, `npm start`, and `npm test`.
 
+## Final phases and project materials
+
+- [Phase 12–14 security, accessibility, and release audit](docs/phase-12-14-release-audit.md)
+- [System diagrams](docs/system-diagrams.md)
+- [Academic synopsis draft with a 22-page layout](docs/swachhai-synopsis.md)
+- [Presentation outline](docs/swachhai-presentation-outline.md)
+- [API reference](docs/api.md)
+
 ## Initial administrator
 
 Public registration creates a citizen immediately. Worker and administrator signups create inactive access requests; only an existing administrator can approve them. Passwords must be 8–128 characters. There are no default admin credentials. For the first administrator only, set `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL`, and a unique 8–128 character `INITIAL_ADMIN_PASSWORD` in `server/.env`, then run:
@@ -117,6 +125,9 @@ All endpoints are under `/api/v1`. See [docs/api.md](docs/api.md) for request/re
 | GET / PATCH | `/reports/:id` | Citizen owner; edits only while submitted |
 | GET | `/reports/meta/zones` | Citizen; configured active pilot-zone labels |
 | GET | `/reports` | Admin; paginated report list |
+| POST | `/assistant/chat`, `/assistant/draft` | Authenticated chat; citizens can prepare a non-submitted complaint draft |
+| GET / POST | `/recommendations/admin`, `/recommendations/admin/generate` | Admin; list review history and create aggregate-evidence recommendation snapshots |
+| PATCH / GET | `/recommendations/admin/:id/review`, `/recommendations/admin/:id/outcome` | Admin; review a snapshot and compare observed report counts after a recorded action |
 
 ## Phase 3 setup and limitations
 
@@ -132,8 +143,8 @@ Persistent image uploads require CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and 
 - `src/features/reports` â€” report submission, dashboard, history, detail pages, and report API service.
 - `src/services/apiClient.js` â€” credentialed API boundary.
 - `server/src/config` â€” environment and database setup.
-- `server/src/models` contains the Mongoose user, report, and zone models.
+- `server/src/models` contains Mongoose user, report, zone, notification, task, audit, and recommendation models.
 - `server/src/middleware`, `routes`, `controllers`, `services` â€” API boundary and policies.
 - `server/src/scripts/seedAdmin.js` â€” explicit one-time admin bootstrap.
 - `server/test` contains API security, authentication, and report tests using isolated test models.
-- `docs` â€” architecture, setup, auth flow, and API reference.
+- `docs` â€” architecture, setup, auth flow, API reference, security/accessibility audit, synopsis, and presentation outline.

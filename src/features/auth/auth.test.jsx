@@ -6,6 +6,7 @@ import { AuthProvider } from './AuthProvider.jsx'
 import AuthPage from '../../pages/AuthPage.jsx'
 import ProtectedRoute from '../../components/auth/ProtectedRoute.jsx'
 import AppLayout from '../../layouts/AppLayout.jsx'
+import { ThemeProvider } from '../theme/ThemeProvider.jsx'
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
@@ -14,7 +15,7 @@ function response(status, data) {
 }
 
 function mount(path) {
-  return render(<MemoryRouter initialEntries={[path]}><AuthProvider><Routes>
+  return render(<ThemeProvider><MemoryRouter initialEntries={[path]}><AuthProvider><Routes>
     <Route path="/login" element={<AuthPage mode="login" title="Sign in" />} />
     <Route path="/register" element={<AuthPage mode="register" title="Create account" />} />
     <Route path="/forbidden" element={<div>Forbidden page</div>} />
@@ -23,7 +24,7 @@ function mount(path) {
     <Route path="/admin" element={<ProtectedRoute roles={['admin']}><div>Admin dashboard</div></ProtectedRoute>} />
     <Route path="/private" element={<ProtectedRoute roles={['admin']}><div>Private content</div></ProtectedRoute>} />
     <Route path="/" element={<div>Public homepage</div>} />
-  </Routes></AuthProvider></MemoryRouter>)
+  </Routes></AuthProvider></MemoryRouter></ThemeProvider>)
 }
 
 const api = (urlPart, method = 'GET') => fetch.mock.calls.find(([url, options]) => url.includes(urlPart) && (options?.method || 'GET') === method)
