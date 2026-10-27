@@ -1,1 +1,220 @@
-.recommendation-panel{display:grid;gap:13px;margin-top:15px}.recommendation-panel-intro{color:#9e9e9e;font-size:12px;line-height:1.6}.recommendation-run-list{display:grid;gap:11px}.recommendation-run{padding:16px;border:1px solid #3a3a3a;background:#151515}.recommendation-run-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.recommendation-run-head h3{margin:0;color:#ece6e0;font:500 17px/1.3 var(--display)}.recommendation-run-meta{margin:6px 0 0;color:#888;font-size:10px}.recommendation-list{display:grid;gap:9px;margin-top:13px}.recommendation-card{padding:13px;border:1px solid #303030;background:#191919}.recommendation-card h4{margin:0 0 7px;color:#e6d2c1;font-size:13px}.recommendation-card p{margin:5px 0;color:#b9b5b1;font-size:11px;line-height:1.6}.recommendation-card p strong{color:#ddd}.recommendation-evidence{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}.recommendation-evidence span{padding:6px 8px;border:1px solid #3b3b3b;background:#141414;color:#c4b9ad;font-size:10px}.recommendation-priority{display:inline-flex;margin-top:5px;padding:4px 7px;border:1px solid #48413a;color:#d0b39a;font-size:9px;text-transform:uppercase;letter-spacing:.06em}.recommendation-review-form{display:grid;grid-template-columns:180px minmax(150px,1fr) minmax(150px,1fr) auto;align-items:end;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid #303030}.recommendation-review-form label{display:grid;gap:5px;color:#aaa;font-size:10px}.recommendation-review-form input,.recommendation-review-form select{width:100%;min-height:39px;padding:8px;border:1px solid #3d3d3d;background:#111;color:#eee;font:11px 'DM Sans',sans-serif}.recommendation-review-form button,.recommendation-run-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:39px;padding:0 11px;border:1px solid #cf9e75;background:#cf9e75;color:#15120f;font-size:10px;font-weight:700;cursor:pointer}.recommendation-review-form button:disabled,.recommendation-run-actions button:disabled{opacity:.5;cursor:not-allowed}.recommendation-run-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}.recommendation-run-actions button{border-color:#4b433a;background:transparent;color:#d4c2b3}.recommendation-outcome{margin-top:10px;padding:12px;border:1px solid #414141;background:#111;color:#bbb;font-size:11px;line-height:1.6}.recommendation-outcome strong{color:#ddd}.recommendation-insufficient{padding:12px;border:1px solid #49423b;background:#1b1917;color:#bcb4ac;font-size:11px;line-height:1.6}.recommendation-error{color:#ff9f95;font-size:11px}.recommendation-period-label{color:#777;font-size:9px}@media(max-width:800px){.recommendation-review-form{grid-template-columns:1fr 1fr}.recommendation-review-form button{grid-column:1/-1}}@media(max-width:500px){.recommendation-run-head{flex-direction:column}.recommendation-review-form{grid-template-columns:1fr}.recommendation-review-form button{grid-column:auto}}
+/* ==========================================================================
+   Cleanliness Recommendations — Clean Design System
+   ========================================================================== */
+
+.recommendation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.recommendation-panel-intro {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.recommendation-run-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.recommendation-run {
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow-xs);
+}
+
+.recommendation-run-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.recommendation-run-head h3 {
+  margin: 0;
+  font-size: 17px;
+  color: var(--text);
+}
+
+.recommendation-run-meta {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.recommendation-period-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--subtle);
+}
+
+.recommendation-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.recommendation-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-light);
+}
+
+.recommendation-card h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.recommendation-card p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.recommendation-card p strong {
+  color: var(--text);
+}
+
+.recommendation-evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.recommendation-evidence span {
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.recommendation-priority {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.recommendation-review-form {
+  display: grid;
+  grid-template-columns: 180px minmax(160px, 1fr) minmax(160px, 1fr) auto;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.recommendation-review-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.recommendation-review-form select,
+.recommendation-review-form input {
+  min-height: 38px;
+  font-size: 13px;
+}
+
+.recommendation-review-form button,
+.recommendation-run-actions button {
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.recommendation-review-form button:hover,
+.recommendation-run-actions button:hover {
+  background: var(--accent-hover);
+}
+
+.recommendation-review-form button:disabled,
+.recommendation-run-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.recommendation-run-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.recommendation-outcome {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-light);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.recommendation-outcome strong {
+  color: var(--text);
+}
+
+.recommendation-insufficient {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-light);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.recommendation-error {
+  color: #ef4444;
+  font-size: 13px;
+}
+
+@media (max-width: 800px) {
+  .recommendation-review-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .recommendation-review-form button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 500px) {
+  .recommendation-run-head {
+    flex-direction: column;
+  }
+  .recommendation-review-form {
+    grid-template-columns: 1fr;
+  }
+}

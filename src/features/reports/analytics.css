@@ -1,1 +1,83 @@
-.admin-daily-panel{margin-top:14px}.admin-daily-bars{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:13px;max-height:260px;overflow:auto}.admin-daily-bars li{min-width:0}.admin-daily-bars li>div{display:flex;justify-content:space-between;gap:7px;font-size:11px}.admin-daily-bars li>div span{color:#aaa}.admin-daily-bars .admin-bar-track{display:block;margin-top:6px}.admin-insights-panel{margin-top:14px}.admin-ai-insight{white-space:pre-wrap;color:#ddd;font-size:13px;line-height:1.75}
+/* ==========================================================================
+   Admin Analytics — Clean Design System
+   ========================================================================== */
+
+.admin-daily-panel {
+  margin-top: 20px;
+}
+
+.admin-daily-bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+
+.admin-daily-bars li {
+  min-width: 0;
+}
+
+.admin-daily-bars li > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.admin-daily-bars li > div span {
+  color: var(--muted);
+}
+
+.admin-daily-bars .admin-bar-track {
+  display: block;
+  margin-top: 6px;
+  height: 6px;
+  background: var(--bg-deep);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.admin-daily-bars .admin-bar-track i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+}
+
+.admin-insights-panel {
+  margin-top: 20px;
+}
+
+.admin-ai-insight {
+  white-space: pre-wrap;
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.7;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--panel-light);
+  border: 1px solid var(--border);
+  margin-top: 14px;
+}
+
+.admin-method-note {
+  font-size: 12px;
+  color: var(--subtle);
+  margin: 8px 0 0;
+}
+
+.admin-audit-overview code {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--panel-light);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  display: block;
+  margin-top: 4px;
+  overflow-x: auto;
+}
