@@ -2280,11 +2280,41 @@ textarea:disabled {
   font-size: 12px;
   font-weight: 500;
   transition: all 0.15s ease;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .theme-toggle:hover {
   color: var(--text);
   border-color: var(--accent);
+}
+
+.theme-toggle-text {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .theme-toggle,
+  .workspace-account .theme-toggle,
+  .nav-actions .theme-toggle,
+  .mobile-menu-actions .theme-toggle {
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    min-width: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    gap: 0;
+    flex-shrink: 0;
+  }
+
+  .theme-toggle span,
+  .theme-toggle .theme-toggle-text {
+    display: none !important;
+  }
 }
 
 @media (max-width: 960px) {
@@ -2314,6 +2344,16 @@ textarea:disabled {
 }
 
 @media (max-width: 720px) {
+  .nav-actions {
+    gap: 8px;
+  }
+  .workspace-topbar {
+    padding: 0 16px;
+    gap: 8px;
+  }
+  .workspace-account {
+    gap: 8px;
+  }
   .desktop-nav,
   .nav-actions .sign-in-link {
     display: none;
