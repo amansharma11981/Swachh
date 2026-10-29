@@ -1,55 +1,573 @@
 /* ==========================================================================
-   Admin Analytics — Clean Design System
+   Admin Analytics & Report Blocks — Responsive Clean Design System
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   Filter Toolbar Responsive Layout
+   -------------------------------------------------------------------------- */
+.admin-date-filters-container {
+  margin-bottom: 24px;
+}
+
+.admin-date-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.15s ease;
+}
+
+.admin-filter-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.admin-date-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  min-width: 0;
+}
+
+.filter-label-text {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--subtle);
+}
+
+.admin-date-filters input[type="date"],
+.admin-date-filters select {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-light);
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.admin-date-filters input[type="date"]:focus,
+.admin-date-filters select:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.admin-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.button-clear-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.button-clear-filters:hover {
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   Metric Cards Grid (Report Stat Blocks)
+   -------------------------------------------------------------------------- */
+.admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 20px 0 24px;
+}
+
+.admin-stat-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border-strong);
+}
+
+.admin-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.admin-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+/* Semantic Variants for Metric Blocks */
+.admin-stat-primary .admin-stat-icon {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.admin-stat-warning .admin-stat-icon {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}
+
+.admin-stat-info .admin-stat-icon {
+  background: var(--status-progress-bg);
+  color: var(--status-progress-text);
+}
+
+.admin-stat-success .admin-stat-icon {
+  background: var(--status-resolved-bg);
+  color: var(--status-resolved-text);
+}
+
+.admin-stat-purple .admin-stat-icon {
+  background: rgba(168, 85, 247, 0.12);
+  color: #a855f7;
+}
+
+.admin-stat-danger .admin-stat-icon {
+  background: var(--status-rejected-bg);
+  color: var(--status-rejected-text);
+}
+
+.admin-stat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--panel-light);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.admin-stat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-stat-value {
+  font-family: var(--display);
+  font-size: clamp(26px, 3.2vw, 32px);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.admin-stat-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-stat-desc {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* --------------------------------------------------------------------------
+   Daily Report Volume Panel
+   -------------------------------------------------------------------------- */
 .admin-daily-panel {
-  margin-top: 20px;
+  margin-top: 24px;
+}
+
+.admin-panel-stats-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  background: var(--panel-light);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.admin-panel-stats-pill strong {
+  color: var(--text);
+}
+
+.admin-panel-stats-pill .divider {
+  color: var(--subtle);
+}
+
+.admin-daily-chart-wrapper {
+  margin-top: 18px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
 }
 
 .admin-daily-bars {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 12px;
-  max-height: 260px;
-  overflow-y: auto;
   list-style: none;
   padding: 0;
-  margin: 16px 0 0;
+  margin: 0;
+  max-height: 320px;
+  overflow-y: auto;
 }
 
-.admin-daily-bars li {
+.admin-daily-bar-item {
   min-width: 0;
+  padding: 12px;
+  background: var(--panel-light);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.admin-daily-bars li > div {
+.admin-daily-bar-item:hover {
+  border-color: var(--border-strong);
+  background: var(--panel-hover);
+}
+
+.admin-daily-bar-header {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
   gap: 8px;
   font-size: 12px;
 }
 
-.admin-daily-bars li > div span {
+.admin-daily-date {
   color: var(--muted);
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
-.admin-daily-bars .admin-bar-track {
-  display: block;
-  margin-top: 6px;
-  height: 6px;
-  background: var(--bg-deep);
+.admin-daily-count {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   Analytics Grid & Panels (Reports by Category & Zone)
+   -------------------------------------------------------------------------- */
+.admin-analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.admin-analytics-panel {
+  padding: 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-panel-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-soft-border);
+  white-space: nowrap;
+}
+
+/* Bar Lists & Zone Lists */
+.admin-bar-list,
+.admin-zone-list {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-bar-list-item,
+.admin-zone-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--panel-light);
+  border: 1px solid var(--border-subtle);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.admin-bar-list-item:hover,
+.admin-zone-item:hover {
+  border-color: var(--border-strong);
+  background: var(--panel-hover);
+}
+
+.admin-bar-row,
+.admin-zone-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-bar-label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-bar-metrics,
+.admin-zone-metrics {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.admin-bar-metrics strong,
+.admin-zone-metrics strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.admin-bar-pct,
+.admin-zone-pct {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.admin-bar-track {
+  display: block;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--bg-deep);
   overflow: hidden;
 }
 
-.admin-daily-bars .admin-bar-track i {
+.admin-bar-track i {
   display: block;
   height: 100%;
   background: var(--accent);
   border-radius: var(--radius-full);
+  transition: width 0.35s ease;
 }
 
-.admin-insights-panel {
+/* Zone Items */
+.admin-zone-item {
+  flex-direction: row;
+}
+
+.admin-zone-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.admin-zone-rank {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-xs);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--subtle);
+  flex-shrink: 0;
+}
+
+.admin-zone-name {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-panel-footer {
   margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.admin-stat-chip svg {
+  color: var(--accent);
+}
+
+.admin-method-note {
+  font-size: 12px;
+  color: var(--subtle);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.admin-empty-panel-msg {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  background: var(--panel-light);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+  margin-top: 16px;
+}
+
+/* --------------------------------------------------------------------------
+   Audit Activity Overview Block
+   -------------------------------------------------------------------------- */
+.admin-audit-overview {
+  margin-top: 24px;
+}
+
+.admin-audit-list {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-audit-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--panel-light);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s ease;
+}
+
+.admin-audit-item:hover {
+  border-color: var(--border-strong);
+}
+
+.admin-audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-audit-action {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.admin-audit-target {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.admin-audit-time {
+  font-size: 11.5px;
+  color: var(--subtle);
+  font-family: var(--mono);
+  margin-left: auto;
+}
+
+.admin-audit-code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* --------------------------------------------------------------------------
+   AI Operations Notes Block
+   -------------------------------------------------------------------------- */
+.admin-insights-panel {
+  margin-top: 24px;
 }
 
 .admin-ai-insight {
@@ -57,27 +575,109 @@
   color: var(--text);
   font-size: 13.5px;
   line-height: 1.7;
-  padding: 16px;
+  padding: 18px;
   border-radius: var(--radius-sm);
   background: var(--panel-light);
   border: 1px solid var(--border);
   margin-top: 14px;
 }
 
-.admin-method-note {
-  font-size: 12px;
-  color: var(--subtle);
-  margin: 8px 0 0;
+/* --------------------------------------------------------------------------
+   Heading Actions
+   -------------------------------------------------------------------------- */
+.dashboard-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.admin-audit-overview code {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-  background: var(--panel-light);
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  display: block;
-  margin-top: 4px;
-  overflow-x: auto;
+.dashboard-heading-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* --------------------------------------------------------------------------
+   Comprehensive Responsive Breakpoints for Admin Dashboard
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .admin-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 880px) {
+  .admin-analytics-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .dashboard-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard-heading-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-metric-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .admin-stat-card {
+    padding: 16px;
+  }
+
+  .admin-filter-group {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-filter-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-filter-actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-daily-bars {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-analytics-panel {
+    padding: 18px;
+  }
+
+  .admin-panel-stats-pill {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .section-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .admin-audit-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .admin-audit-time {
+    margin-left: 0;
+  }
 }
