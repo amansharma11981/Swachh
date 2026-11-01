@@ -460,6 +460,7 @@ Run via: `npm run test:server`
 
 Detailed design documents, specifications, and academic project artifacts:
 
+- **[Codebase Reading Plan](docs/codebase-reading-plan.md)** — Step-by-step 6-phase reading roadmap and architectural walkthrough for developers.
 - **[System Architecture](docs/architecture.md)** — Architectural patterns, request lifecycles, and component communication.
 - **[API Reference](docs/api.md)** — Complete endpoint schema documentation with request and response examples.
 - **[Authentication Specification](docs/authentication.md)** — Security architecture, JWT cookie strategy, and CSRF protection.
